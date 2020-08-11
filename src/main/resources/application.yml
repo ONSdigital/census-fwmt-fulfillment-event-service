@@ -1,0 +1,108 @@
+server:
+  port: 8070
+
+spring:
+  application:
+    name: census-fwmt-job-service
+  jackson:
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
+  security:
+    user:
+      name: "user"
+      password: "password"
+  datasource:
+    url: jdbc:postgresql://localhost/postgres?currentSchema=fwmtg
+    driver-class-name: org.postgresql.Driver
+    schema: classpath:/schema.sql
+    continue-on-error: false
+    username: postgres
+    password: postgres
+    initialization-mode: always      
+  liquibase:
+    url: jdbc:postgresql://localhost:5432/postgres?currentSchema=fwmtg
+    default-schema: fwmtg
+    change-log: classpath:db/changelog/db.changelog-master.yml
+    user: postgres
+    password: postgres
+#     enabled: false
+
+management:
+  # Place /info and /health in the root
+  endpoints.web.base-path: ''
+  endpoint:
+    health:
+      show-details: always
+  health:
+    rabbit:
+      enabled: false
+
+logging:
+  profile: DEV
+  level:
+    root: WARN
+    uk.gov.ons.census.fwmt: INFO
+    org.springframework: INFO
+    org.springframework.security: INFO
+    org.springframework.web: INFO
+    org.hibernate: INFO
+    org.apache.commons.dbcp2: INFO
+
+rabbitmq:
+  username: "guest"
+  password: "guest"
+  hostname: "localhost"
+  port: 5672
+  virtualHost: "/"
+  initialInterval: 5000
+  multiplier: 3.0
+  maxInterval: 45000
+  prefetchCount: 500
+  concurrentConsumers: 5
+  queues:
+    rm:
+      input: "RM.Field"
+      dlq: "RM.FieldDLQ"
+      exchange: "adapter-outbound-exchange"
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: "password"
+  database: 2
+
+totalmobile:
+  username: "user"
+  password: "password"
+  baseUrl: "http://localhost:8000/"
+  healthcheckPath: "swagger/index.html"
+  comet:
+    clientID: ""
+    clientSecret: ""
+    resource: "https://int-ons-comet-api-app-ukwest.azurewebsites.net"
+    authority: "https://login.microsoftonline.com/05057611-67c0-4390-85ef-2c623ff4104f/oauth2/v2.0/token"
+  operation:
+    case:
+      create:
+        path: "cases/"
+
+fwmt:
+  workTypes:
+    ccs:
+      duration: 5
+    ce:
+      duration: 5
+    hh:
+      duration: 5
+    ohs:
+      duration: 5
+      
+eq:
+  url: "https://fieldservice-ENV_NAME.census-gcp.onsdigital.uk/launch/"
+
+spg:
+  followUpDate: 11111
+
+ce:
+   followUpDate: "01/05/2020"
+   startDate: "01/05/2020"

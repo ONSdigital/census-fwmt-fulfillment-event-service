@@ -1,0 +1,280 @@
+import com.github.spotbugs.SpotBugsTask
+
+buildscript {
+    ext {
+        springVersion = '5.2.3.RELEASE'
+        springBootVersion = '2.2.4.RELEASE'
+    }
+
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+
+    dependencies {
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
+        classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:latest.release'
+        classpath 'org.ajoberstar:gradle-git:1.4.2'
+    }
+}
+
+plugins {
+    // Language
+    id 'java'
+    id 'application'
+
+    // IDEs
+    id 'idea'
+    id 'eclipse'
+
+    // Frameworks
+    id 'org.springframework.boot' version "${springBootVersion}"
+    id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+
+    // Build Tools
+    id 'jacoco'
+    id 'com.github.spotbugs' version '3.0.0'
+    id 'com.github.psxpaul.execfork' version '0.1.8'
+    id 'com.jfrog.artifactory' version '4.13.0'
+    id 'org.ajoberstar.grgit' version '3.0.0'
+
+    // Package Management
+    id 'maven'
+    id 'maven-publish'
+}
+
+description = 'census-fwmt-fulfillment-event-service'
+group = 'uk.gov.ons.census.fwmt'
+version = rootProject.file('version.txt').text.trim()
+
+mainClassName = 'uk.gov.ons.census.fwmt.fulfillment.Application'
+
+sourceCompatibility = 11
+targetCompatibility = 11
+
+repositories {
+    mavenLocal()
+
+    maven {
+        url 'https://ons.jfrog.io/ons/libs-releases-virtual'
+        credentials {
+            username "${artifactory_user}"
+            password "${artifactory_password}"
+        }
+    }
+    maven {
+        url 'https://ons.jfrog.io/ons/libs-snapshots-virtual'
+        credentials {
+            username "${artifactory_user}"
+            password "${artifactory_password}"
+        }
+    }
+
+    mavenCentral()
+}
+
+configurations {
+    integrationTestCompile.extendsFrom testCompile
+    integrationTestRuntime.extendsFrom testRuntime
+    integrationTestAnnotationProcessor.extendsFrom testAnnotationProcessor
+}
+
+dependencyManagement {
+    dependencies {
+        dependency "org.springframework:spring-core:${springVersion}"
+        dependency "org.springframework.boot:spring-boot:${springBootVersion}"
+    }
+}
+
+dependencies {
+    // Custom Libraries
+    compile 'uk.gov.ons.census.fwmt:census-fwmt-canonical:1.0.17-RELEASE'
+    compile 'uk.gov.ons.census.fwmt:census-fwmt-events:1.0.26-RELEASE'
+    compile 'uk.gov.ons.census.fwmt:census-fwmt-common:1.1.30-RELEASE'
+
+    // General Libraries
+    compile 'com.google.guava:guava:27.0.1-jre'
+    //    compile 'org.apache.commons:commons-lang3'
+
+    // Aspects
+    compile 'org.aspectj:aspectjweaver'
+
+    // Spring Boot
+    compile 'org.springframework.boot:spring-boot-starter'
+    compile 'org.springframework.boot:spring-boot-starter-security'
+    compile 'org.springframework.boot:spring-boot-starter-actuator'
+    compile 'org.springframework.boot:spring-boot-starter-amqp'
+    compile 'org.springframework.boot:spring-boot-starter-web'
+    compile 'org.springframework.boot:spring-boot-starter-web-services'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // Spring
+    compile 'org.springframework:spring-jdbc'
+    compile 'org.springframework.retry:spring-retry'
+    compile 'org.springframework:spring-aop'
+    compile 'org.springframework.data:spring-data-redis'
+    //compile 'org.springframework.data:spring-data-redis'
+
+    // Data Formats
+    compile 'org.apache.commons:commons-csv:1.6'
+    compile 'org.yaml:snakeyaml'
+    compile 'org.json:json:20180813'
+    compile 'com.fasterxml.jackson.core:jackson-databind'
+    // compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml'
+    // compile 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    // compile 'com.github.joschi.jackson:jackson-datatype-threetenbp:2.6.4'
+
+    // Data mapping
+    compile 'ma.glasnost.orika:orika-core:1.5.4'
+
+    // Networking
+    compile('org.apache.httpcomponents:httpclient') {
+        exclude module: 'commons-logging'
+    }
+    compile 'org.jsoup:jsoup:1.11.3'
+    compile 'redis.clients:jedis:3.2.0'
+    compile 'com.rabbitmq:amqp-client'
+    compile 'com.microsoft.azure:adal4j:1.6.0'
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // Data Store Setup
+    implementation 'org.liquibase:liquibase-core'
+
+    // Documentation
+    compile 'io.springfox:springfox-swagger2:2.9.2'
+    compile 'io.springfox:springfox-swagger-ui:2.9.2'
+
+    // Meta
+    compile 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    // testAnnotationProcessor 'org.projectlombok:lombok'
+
+    // Testing Framework
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testCompile 'org.junit.jupiter:junit-jupiter-params'
+    testCompile 'org.junit.jupiter:junit-jupiter-engine'
+
+    // Spring Boot
+    testCompile('org.springframework.boot:spring-boot-starter-test') {
+        exclude module: 'android-json'
+        exclude module: 'junit'
+        exclude module: 'junit-vintage-engine'
+    }
+
+    // Mocking Objects
+    testCompile 'org.mockito:mockito-core'
+    testCompile 'org.mockito:mockito-junit-jupiter'
+
+    // integrationTestCompile 'org.assertj:assertj-core'
+
+    integrationTestRuntime 'uk.gov.ons.fwmt:fwmt-service-mocks:1.0.1-SNAPSHOT'
+}
+
+test {
+    useJUnitPlatform()
+
+    testLogging {
+        exceptionFormat = 'Full'
+        showStandardStreams = true
+    }
+}
+
+sourceSets {
+    integrationTest {
+        java.srcDir file('src/integration-test/java')
+        resources.srcDir file('src/integration-test/resources')
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+artifactory {
+    contextUrl = 'https://ons.jfrog.io/ons/'
+    publish {
+        repository {
+            repoKey = 'libs-releases-local'
+            username = "${artifactory_user}"
+            password = "${artifactory_password}"
+        }
+        defaults {
+            publishBuildInfo = false
+        }
+    }
+}
+
+springBoot {
+    buildInfo {
+        properties {
+            additional = [
+                    'Git-Commit': grgit.head().getAbbreviatedId(8)
+            ]
+        }
+    }
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = group
+            artifactId = 'census-fwmt-job-service'
+            version = version
+
+            from components.java
+        }
+    }
+}
+
+artifactoryPublish {
+    publications('maven')
+}
+
+task integrationTest(type: Test) {
+    jacoco {
+        destinationFile = file("$buildDir/jacoco/jacocoTest.exec")
+        classDumpDir = file("$buildDir/jacoco/classpathdumps")
+    }
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    outputs.upToDateWhen { false }
+}
+check.dependsOn integrationTest
+integrationTest.mustRunAfter test
+
+jacoco {
+    toolVersion = "0.8.5"
+    reportsDir = file("$buildDir/customJacocoReportDir")
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled = true
+        html.enabled = false
+    }
+    //    afterEvaluate {
+    //        classDirectories.from = files(classDirectories.files.collect {
+    //            fileTree(dir: it, exclude: [
+    //                    '**/legacy_ingest/*',
+    //                    '**/dto/*',
+    //                    '**/data/tm/*',
+    //                    '**/config/*',
+    //                    '**/CSVParseFinalResult.java',
+    //                    '**/ApplicationConfig.java',
+    //                    '**/WebConfig.java'
+    //            ])
+    //        })
+    //    }
+}
+test.finalizedBy(project.tasks.jacocoTestReport)
+
+check.dependsOn jacocoTestReport
+
+spotbugs {
+    toolVersion = '3.1.12'
+}
+
+tasks.withType(SpotBugsTask) {
+    reports {
+        xml.enabled = false
+        html.enabled = true
+    }
+}

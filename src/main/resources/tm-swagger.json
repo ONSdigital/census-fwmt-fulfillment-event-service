@@ -1,0 +1,414 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "v1",
+    "title": "Totalmobile Comet Cases"
+  },
+  "paths": {
+    "/cases": {
+      "get": {
+        "tags": [
+          "Cases"
+        ],
+        "summary": "Get the Cases",
+        "description": "Get a paginated List of Cases",
+        "operationId": "CasesGet",
+        "consumes": [],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "Specify any filter criteria to limit the results returned. Each filter is a name:value pair separated by the :: delimiter.</br>\n          By default no filtering is applied to the results.\n          The supported filters are - Id, Reference, CaseType, State, Category, EstabType, CoordCode, Outcomes, Warnings, Notes, Contact, Address, Location, Htc, Priority, Description, SpecialInstructions, HoldUntil, VisitCount.\n        ",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pageNo",
+            "in": "query",
+            "description": "Specify the zero based page number to be returned. If not specified the first page is returned.",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "Specify the maximum number of results to return per request.",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of Cases was returned",
+            "schema": {
+              "$ref": "#/definitions/FetchResponse[Case]"
+            }
+          },
+          "400": {
+            "description": "Error(s) found in fetch criteria"
+          }
+        }
+      }
+    },
+    "/cases/{id}": {
+      "get": {
+        "tags": [
+          "Cases"
+        ],
+        "summary": "Get Case by Id",
+        "description": "Gets the Case with matching id",
+        "operationId": "CasesByIdGet",
+        "consumes": [],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Unique Id for Visit",
+            "required": true,
+            "type": "string",
+            "format": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Case was returned",
+            "schema": {
+              "$ref": "#/definitions/Case"
+            }
+          },
+          "400": {
+            "description": "Error(s) found in include criteria"
+          },
+          "404": {
+            "description": "Case was not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Cases"
+        ],
+        "summary": "Put the specified id and caseObject.",
+        "operationId": "CasesByIdPut",
+        "consumes": [
+          "application/json-patch+json",
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "produces": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Identifier.",
+            "required": true,
+            "type": "string",
+            "format": "uuid"
+          },
+          {
+            "name": "caseObject",
+            "in": "body",
+            "description": "Case object.",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Case"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "FetchResponse[Case]": {
+      "title": "FetchResponse",
+      "required": [
+        "results",
+        "paging"
+      ],
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Case"
+          },
+          "readOnly": true
+        },
+        "paging": {
+          "$ref": "#/definitions/PagingInfo",
+          "readOnly": true
+        },
+        "criteria": {
+          "$ref": "#/definitions/FetchCriteria",
+          "readOnly": true
+        }
+      }
+    },
+    "Case": {
+      "title": "Case",
+      "required": [
+        "id",
+        "caseType",
+        "state",
+        "coordCode"
+      ],
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "reference": {
+          "type": "string"
+        },
+        "caseType": {
+          "type": "string"
+        },
+        "state": {
+          "title": "CaseState",
+          "enum": [
+            "open",
+            "closed"
+          ],
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "estabType": {
+          "type": "string"
+        },
+        "coordCode": {
+          "type": "string"
+        },
+        "outcomes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Outcome"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Warning"
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Note"
+          }
+        },
+        "contact": {
+          "$ref": "#/definitions/Contact"
+        },
+        "address": {
+          "$ref": "#/definitions/Address"
+        },
+        "location": {
+          "$ref": "#/definitions/LatLong"
+        },
+        "htc": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "priority": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "description": {
+          "type": "string"
+        },
+        "specialInstructions": {
+          "type": "string"
+        },
+        "holdUntil": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "visitCount": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "_links": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Link"
+          }
+        }
+      }
+    },
+    "Link": {
+      "title": "Link",
+      "type": "object",
+      "properties": {
+        "rel": {
+          "type": "string"
+        },
+        "href": {
+          "type": "string"
+        }
+      }
+    },
+    "PagingInfo": {
+      "title": "PagingInfo",
+      "type": "object",
+      "properties": {
+        "pageNo": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "pageSize": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "pageCount": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "totalCount": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "previous": {
+          "type": "string"
+        },
+        "next": {
+          "type": "string"
+        }
+      }
+    },
+    "FetchCriteria": {
+      "title": "FetchCriteria",
+      "type": "object",
+      "properties": {
+        "filter": {
+          "type": "string"
+        },
+        "order": {
+          "type": "string"
+        },
+        "include": {
+          "type": "string"
+        }
+      }
+    },
+    "Outcome": {
+      "title": "Outcome",
+      "type": "object",
+      "properties": {
+        "result": {
+          "enum": [
+            "noOneHome",
+            "outrightRefusal"
+          ],
+          "type": "string"
+        },
+        "dateCreated": {
+          "format": "date-time",
+          "type": "string"
+        }
+      }
+    },
+    "Warning": {
+      "title": "Warning",
+      "type": "object",
+      "properties": {
+        "warningContent": {
+          "type": "string"
+        },
+        "dateCreated": {
+          "format": "date-time",
+          "type": "string"
+        }
+      }
+    },
+    "Note": {
+      "title": "Note",
+      "type": "object",
+      "properties": {
+        "noteContent": {
+          "type": "string"
+        },
+        "dateCreated": {
+          "format": "date-time",
+          "type": "string"
+        }
+      }
+    },
+    "Contact": {
+      "title": "Contact",
+      "required": [
+        "name"
+      ],
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "organisationName": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        }
+      }
+    },
+    "Address": {
+      "title": "Address",
+      "required": [
+        "postCode"
+      ],
+      "type": "object",
+      "properties": {
+        "uprn": {
+          "format": "double",
+          "type": "number"
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "postCode": {
+          "type": "string"
+        }
+      }
+    },
+    "LatLong": {
+      "title": "LatLong",
+      "required": [
+        "lat",
+        "long"
+      ],
+      "type": "object",
+      "properties": {
+        "lat": {
+          "format": "double",
+          "type": "number"
+        },
+        "long": {
+          "format": "double",
+          "type": "number"
+        }
+      }
+    }
+  }
+}
