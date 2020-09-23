@@ -89,8 +89,8 @@ dependencyManagement {
 dependencies {
     // Custom Libraries
     compile 'uk.gov.ons.census.fwmt:census-fwmt-canonical:1.0.17-RELEASE'
-    compile 'uk.gov.ons.census.fwmt:census-fwmt-events:1.0.26-RELEASE'
-    compile 'uk.gov.ons.census.fwmt:census-fwmt-common:1.1.30-RELEASE'
+    compile 'uk.gov.ons.census.fwmt:census-fwmt-events:1.0.43-SNAPSHOT'
+    compile 'uk.gov.ons.census.fwmt:census-fwmt-common:1.2.7-SNAPSHOT'
 
     // General Libraries
     compile 'com.google.guava:guava:27.0.1-jre'
@@ -136,9 +136,6 @@ dependencies {
     compile 'com.rabbitmq:amqp-client'
     compile 'com.microsoft.azure:adal4j:1.6.0'
     runtimeOnly 'org.postgresql:postgresql'
-
-    // Data Store Setup
-    implementation 'org.liquibase:liquibase-core'
 
     // Documentation
     compile 'io.springfox:springfox-swagger2:2.9.2'

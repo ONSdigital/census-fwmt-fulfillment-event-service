@@ -1,0 +1,75 @@
+package uk.gov.ons.census.fwmt.fulfilment.service;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import uk.gov.ons.census.fwmt.common.data.fulfillment.dto.PauseOutcome;
+import uk.gov.ons.census.fwmt.common.error.GatewayException;
+import uk.gov.ons.census.fwmt.common.rm.dto.ActionInstructionType;
+import uk.gov.ons.census.fwmt.common.rm.dto.FwmtPauseActionInstruction;
+import uk.gov.ons.census.fwmt.events.component.GatewayEventManager;
+import uk.gov.ons.census.fwmt.fulfilment.data.GatewayCache;
+import uk.gov.ons.census.fwmt.fulfilment.lookup.PauseRulesLookup;
+import uk.gov.ons.census.fwmt.fulfilment.rabbit.MessagePublisher;
+
+@Slf4j
+@Service
+public class FulfilmentService {
+
+  private static final String PAUSE_PROCESSED_AND_SENT = "PAUSE_PROCESSED_AND_SENT";
+  @Autowired
+  private PauseRulesLookup pauseRulesLookup;
+
+  @Autowired
+  private GatewayCacheService cacheService;
+
+  @Autowired
+  private GatewayEventManager eventManager;
+
+  @Autowired
+  private MessagePublisher messagePublisher;
+
+  public void processPauseCase(PauseOutcome pauseRequest) throws GatewayException {
+    FwmtPauseActionInstruction pauseActionInstruction = new FwmtPauseActionInstruction();
+    String caseId = "";
+    String pauseRule;
+
+    final GatewayCache caseCache = cacheService.getByIdAndTypeAndExists(pauseRequest.getPayload().getFulfilmentRequest()
+        .getCaseId(), 10, true);
+    final GatewayCache indCache = cacheService.getByIndividualCaseIdAndTypeAndExists(pauseRequest.getPayload().getFulfilmentRequest()
+        .getIndividualCaseId(), 10, true);
+    GatewayCache cache;
+
+    if (caseCache == null && indCache == null){
+      eventManager.triggerErrorEvent(this.getClass(), "Could not find an existing record",
+          caseId, "ROUTING_FAILED");
+      throw new GatewayException(GatewayException.Fault.VALIDATION_FAILED, "Could not find an existing record",
+          String.valueOf(pauseRequest.getPayload().getFulfilmentRequest().getCaseId()));
+    } else if (caseCache == null) {
+      cache = indCache;
+      caseId = indCache.getIndividualCaseId();
+    } else {
+      cache = caseCache;
+      caseId = cache.getCaseId();
+    }
+
+    pauseRule = pauseRulesLookup.getLookup(pauseRequest.getPayload().getFulfilmentRequest().getFulfilmentCode());
+
+    if (pauseRule == null) {
+      eventManager.triggerErrorEvent(this.getClass(), "Could not find a rule for the create request from RM",
+          String.valueOf(caseId), "ROUTING_FAILED");
+      throw new GatewayException(GatewayException.Fault.VALIDATION_FAILED,
+          "Could not find a rule for the create request from RM", cache);
+    }
+
+    pauseActionInstruction.setActionInstruction(ActionInstructionType.PAUSE);
+    pauseActionInstruction.setSurveyName("CENSUS");
+    pauseActionInstruction.setAddressType("HH");
+    pauseActionInstruction.setPauseCode(pauseRule);
+    pauseActionInstruction.setCaseId(caseId);
+
+    messagePublisher.pausePublish(pauseActionInstruction);
+
+    eventManager.triggerEvent(pauseRequest.getPayload().getFulfilmentRequest().getCaseId(), PAUSE_PROCESSED_AND_SENT);
+  }
+}

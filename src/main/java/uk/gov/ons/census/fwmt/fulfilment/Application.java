@@ -1,4 +1,4 @@
-package uk.gov.ons.census.fwmt.fulfillment;
+package uk.gov.ons.census.fwmt.fulfilment;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -12,8 +12,8 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @EnableRetry
 @EnableScheduling
 @EnableSwagger2
-@EnableJpaRepositories("uk.gov.ons.census.fwmt.jobservice.repository")
-@ComponentScan({"uk.gov.ons.census.fwmt.jobservice", "uk.gov.ons.census.fwmt.events"})
+@EnableJpaRepositories("uk.gov.ons.census.fwmt.fulfilment.repository")
+@ComponentScan({"uk.gov.ons.census.fwmt.fulfilment", "uk.gov.ons.census.fwmt.events"})
 public class Application {
 
   public static final String APPLICATION_NAME = "FWMT Gateway Job Service";
