@@ -45,12 +45,12 @@ public class FulfilmentService {
     if (caseCache == null && indCache == null){
       eventManager.triggerErrorEvent(this.getClass(), "Could not find an existing record",
           caseId, "ROUTING_FAILED");
+      throw new GatewayException(GatewayException.Fault.VALIDATION_FAILED, "Could not find an existing record",
+          String.valueOf(pauseRequest.getPayload().getFulfilmentRequest().getCaseId()));
     } else if (caseCache == null) {
-      cache = indCache;
       caseId = indCache.getIndividualCaseId();
     } else {
-      cache = caseCache;
-      caseId = cache.getCaseId();
+      caseId = caseCache.getCaseId();
     }
 
     pauseRule = pauseRulesLookup.getLookup(pauseRequest.getPayload().getFulfilmentRequest().getFulfilmentCode());
@@ -58,17 +58,17 @@ public class FulfilmentService {
     if (pauseRule == null) {
       eventManager.triggerErrorEvent(this.getClass(), "Could not find a rule for the fulfilment request and product code.",
           String.valueOf(caseId), "Product code: " + productCode);
-      throw new GatewayException(GatewayException.Fault.VALIDATION_FAILED, "Could not find a rule for the create request from RM");
+    } else {
+      pauseActionInstruction.setActionInstruction(ActionInstructionType.PAUSE);
+      pauseActionInstruction.setSurveyName("CENSUS");
+      pauseActionInstruction.setAddressType("HH");
+      pauseActionInstruction.setAddressLevel("U");
+      pauseActionInstruction.setPauseCode(pauseRule);
+      pauseActionInstruction.setCaseId(caseId);
+
+      messagePublisher.pausePublish(pauseActionInstruction);
+
+      eventManager.triggerEvent(pauseRequest.getPayload().getFulfilmentRequest().getCaseId(), PAUSE_PROCESSED_AND_SENT);
     }
-
-    pauseActionInstruction.setActionInstruction(ActionInstructionType.PAUSE);
-    pauseActionInstruction.setSurveyName("CENSUS");
-    pauseActionInstruction.setAddressType("HH");
-    pauseActionInstruction.setPauseCode(pauseRule);
-    pauseActionInstruction.setCaseId(caseId);
-
-    messagePublisher.pausePublish(pauseActionInstruction);
-
-    eventManager.triggerEvent(pauseRequest.getPayload().getFulfilmentRequest().getCaseId(), PAUSE_PROCESSED_AND_SENT);
   }
 }
