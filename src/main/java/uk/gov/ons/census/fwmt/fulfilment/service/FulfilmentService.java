@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import uk.gov.ons.census.fwmt.common.data.fulfillment.dto.PauseOutcome;
 import uk.gov.ons.census.fwmt.common.error.GatewayException;
 import uk.gov.ons.census.fwmt.common.rm.dto.ActionInstructionType;
+import uk.gov.ons.census.fwmt.common.rm.dto.FwmtActionInstruction;
 import uk.gov.ons.census.fwmt.common.rm.dto.FwmtPauseActionInstruction;
 import uk.gov.ons.census.fwmt.events.component.GatewayEventManager;
 import uk.gov.ons.census.fwmt.fulfilment.data.GatewayCache;
@@ -30,7 +31,7 @@ public class FulfilmentService {
   private MessagePublisher messagePublisher;
 
   public void processPauseCase(PauseOutcome pauseRequest) throws GatewayException {
-    FwmtPauseActionInstruction pauseActionInstruction = new FwmtPauseActionInstruction();
+    FwmtActionInstruction pauseActionInstruction = new FwmtActionInstruction();
     String caseId = "";
     String pauseRule;
     String productCode = pauseRequest.getPayload().getFulfilmentRequest().getFulfilmentCode();
