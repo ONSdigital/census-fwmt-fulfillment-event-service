@@ -33,6 +33,7 @@ public class FulfilmentService {
     FwmtPauseActionInstruction pauseActionInstruction = new FwmtPauseActionInstruction();
     String caseId = "";
     String pauseRule;
+    String productCode = pauseRequest.getPayload().getFulfilmentRequest().getFulfilmentCode();
 
     final GatewayCache caseCache = cacheService.getByIdAndTypeAndExists(pauseRequest.getPayload().getFulfilmentRequest()
         .getCaseId(), 10, true);
@@ -43,8 +44,6 @@ public class FulfilmentService {
     if (caseCache == null && indCache == null){
       eventManager.triggerErrorEvent(this.getClass(), "Could not find an existing record",
           caseId, "ROUTING_FAILED");
-      throw new GatewayException(GatewayException.Fault.VALIDATION_FAILED, "Could not find an existing record",
-          String.valueOf(pauseRequest.getPayload().getFulfilmentRequest().getCaseId()));
     } else if (caseCache == null) {
       cache = indCache;
       caseId = indCache.getIndividualCaseId();
@@ -56,10 +55,9 @@ public class FulfilmentService {
     pauseRule = pauseRulesLookup.getLookup(pauseRequest.getPayload().getFulfilmentRequest().getFulfilmentCode());
 
     if (pauseRule == null) {
-      eventManager.triggerErrorEvent(this.getClass(), "Could not find a rule for the create request from RM",
-          String.valueOf(caseId), "ROUTING_FAILED");
-      throw new GatewayException(GatewayException.Fault.VALIDATION_FAILED,
-          "Could not find a rule for the create request from RM", cache);
+      eventManager.triggerErrorEvent(this.getClass(), "Could not find a rule for the fulfilment request and product code.",
+          String.valueOf(caseId), "Product code: " + productCode);
+      throw new GatewayException(GatewayException.Fault.VALIDATION_FAILED, "Could not find a rule for the create request from RM");
     }
 
     pauseActionInstruction.setActionInstruction(ActionInstructionType.PAUSE);

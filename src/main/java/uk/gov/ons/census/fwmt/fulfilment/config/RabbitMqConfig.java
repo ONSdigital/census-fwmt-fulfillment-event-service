@@ -32,7 +32,6 @@ import java.util.Map;
 @Configuration
 public class RabbitMqConfig {
   public final String inputQueue;
-  public final String inputDlq;
   private final String username;
   private final String password;
   private final String hostname;
@@ -52,8 +51,7 @@ public class RabbitMqConfig {
       @Value("${rabbitmq.multiplier}") double multiplier,
       @Value("${rabbitmq.maxInterval}") int maxInterval,
       @Value("${rabbitmq.prefetchCount}") int prefetchCount,
-      @Value("${rabbitmq.queues.rm.input}") String inputQueue,
-      @Value("${rabbitmq.queues.rm.dlq}") String inputDlq) {
+      @Value("${rabbitmq.queues.rm.input}") String inputQueue) {
     this.username = username;
     this.password = password;
     this.hostname = hostname;
@@ -63,7 +61,6 @@ public class RabbitMqConfig {
     this.multiplier = multiplier;
     this.maxInterval = maxInterval;
     this.inputQueue = inputQueue;
-    this.inputDlq = inputDlq;
     this.prefetchCount = prefetchCount;
   }
   @Bean
@@ -74,12 +71,6 @@ public class RabbitMqConfig {
     cachingConnectionFactory.setUsername(username);
     return cachingConnectionFactory;
   }
-//  @Bean
-//  @Qualifier("JS")
-//  public Jackson2JsonMessageConverter messageConverter() {
-//    ObjectMapper objectMapper = new ObjectMapper();
-//    return new Jackson2JsonMessageConverter(objectMapper);
-//  }
   @Bean
   public AmqpAdmin amqpAdmin() {
     return new RabbitAdmin(connectionFactory());
@@ -127,45 +118,29 @@ public class RabbitMqConfig {
 
     return retryTemplate;
   }
+  @Bean
+  @Qualifier("OS")
+  public MessageListenerAdapter listenerAdapter(FulfilmentEventReceiver receiver) {
+    return new MessageListenerAdapter(receiver, "receiveMessage");
+  }
 
   @Bean
-  public Queue queue() {
-    Queue queue = QueueBuilder.durable(inputQueue)
-        .withArgument("x-dead-letter-exchange", "")
-        .withArgument("x-dead-letter-routing-key", inputDlq)
-        .build();
-    queue.setAdminsThatShouldDeclare(amqpAdmin());
-    return queue;
+  @Qualifier("OS")
+  public SimpleMessageListenerContainer container(
+      ConnectionFactory connectionFactory,
+      @Qualifier("OS") MessageListenerAdapter listenerAdapter,
+      @Qualifier("JS") MessageConverter jsonMessageConverter,
+      RetryOperationsInterceptor retryOperationsInterceptor) {
+
+    listenerAdapter.setMessageConverter(jsonMessageConverter);
+
+    SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
+    Advice[] adviceChain = {retryOperationsInterceptor};
+    container.setAdviceChain(adviceChain);
+    container.setConnectionFactory(connectionFactory);
+    container.setQueueNames(inputQueue);
+    container.setMessageListener(listenerAdapter);
+    container.setPrefetchCount(prefetchCount);
+    return container;
   }
-  @Bean
-  public Queue deadLetterQueue() {
-    Queue queue = QueueBuilder.durable(inputDlq).build();
-    queue.setAdminsThatShouldDeclare(amqpAdmin());
-    return queue;
-  }
-    @Bean
-    @Qualifier("OS")
-    public MessageListenerAdapter listenerAdapter(FulfilmentEventReceiver receiver) {
-      return new MessageListenerAdapter(receiver, "receiveMessage");
-    }
-
-    @Bean
-    @Qualifier("OS")
-    public SimpleMessageListenerContainer container(
-        ConnectionFactory connectionFactory,
-        @Qualifier("OS") MessageListenerAdapter listenerAdapter,
-        @Qualifier("JS") MessageConverter jsonMessageConverter,
-        RetryOperationsInterceptor retryOperationsInterceptor) {
-
-      listenerAdapter.setMessageConverter(jsonMessageConverter);
-
-      SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
-      Advice[] adviceChain = {retryOperationsInterceptor};
-      container.setAdviceChain(adviceChain);
-      container.setConnectionFactory(connectionFactory);
-      container.setQueueNames(inputQueue);
-      container.setMessageListener(listenerAdapter);
-      container.setPrefetchCount(prefetchCount);
-      return container;
-    }
 }

@@ -36,11 +36,9 @@ public class FulfilmentEventReceiver {
       eventManager.triggerEvent(fulfillmentEvent.getPayload().getFulfilmentRequest().getCaseId(), RECEIVED_FULFILMENT, "Test");
       fulfilmentService.processPauseCase(fulfillmentEvent);
     } else {
-
-      eventManager.triggerErrorEvent(this.getClass(), "Could not find a matching channel for the pause request",
-          String.valueOf(fulfillmentEvent.getPayload().getFulfilmentRequest().getCaseId()), "ROUTING_FAILED");
-      throw new GatewayException(GatewayException.Fault.VALIDATION_FAILED,
-          "Could not find a matching channel for pause request", fulfillmentEvent);
+      eventManager.triggerErrorEvent(this.getClass(), "Could not find a matching channel for the fulfilment pause request",
+          String.valueOf(fulfillmentEvent.getPayload().getFulfilmentRequest().getCaseId()), "Channel: " +
+              fulfillmentEvent.getEvent().getChannel() + "Product code: " + fulfillmentEvent.getPayload().getFulfilmentRequest().getFulfilmentCode());
     }
   }
 }
