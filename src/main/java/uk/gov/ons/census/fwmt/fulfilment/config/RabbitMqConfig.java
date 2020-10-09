@@ -1,18 +1,13 @@
 package uk.gov.ons.census.fwmt.fulfilment.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.aopalliance.aop.Advice;
 import org.springframework.amqp.core.AmqpAdmin;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
-import org.springframework.amqp.support.converter.DefaultClassMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
-import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -20,18 +15,15 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.retry.support.RetryTemplate;
-import uk.gov.ons.census.fwmt.common.data.fulfillment.dto.PauseOutcome;
 import uk.gov.ons.census.fwmt.common.retry.DefaultListenerSupport;
 import uk.gov.ons.census.fwmt.common.retry.GatewayMessageRecover;
 import uk.gov.ons.census.fwmt.common.retry.GatewayRetryPolicy;
 import uk.gov.ons.census.fwmt.fulfilment.rabbit.FulfilmentEventReceiver;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @Configuration
 public class RabbitMqConfig {
   public final String inputQueue;
+  public final String inputDlq;
   private final String username;
   private final String password;
   private final String hostname;
@@ -51,7 +43,8 @@ public class RabbitMqConfig {
       @Value("${rabbitmq.multiplier}") double multiplier,
       @Value("${rabbitmq.maxInterval}") int maxInterval,
       @Value("${rabbitmq.prefetchCount}") int prefetchCount,
-      @Value("${rabbitmq.queues.rm.input}") String inputQueue) {
+      @Value("${rabbitmq.queues.rm.input}") String inputQueue,
+      @Value("${rabbitmq.queues.rm.dlq}") String inputDlq) {
     this.username = username;
     this.password = password;
     this.hostname = hostname;
@@ -61,6 +54,7 @@ public class RabbitMqConfig {
     this.multiplier = multiplier;
     this.maxInterval = maxInterval;
     this.inputQueue = inputQueue;
+    this.inputDlq = inputDlq;
     this.prefetchCount = prefetchCount;
   }
   @Bean
@@ -74,24 +68,6 @@ public class RabbitMqConfig {
   @Bean
   public AmqpAdmin amqpAdmin() {
     return new RabbitAdmin(connectionFactory());
-  }
-
-  @Bean
-  @Qualifier("JS")
-  public MessageConverter jsonMessageConverter() {
-    Jackson2JsonMessageConverter jsonMessageConverter = new Jackson2JsonMessageConverter();
-    jsonMessageConverter.setClassMapper(classMapper());
-    return jsonMessageConverter;
-  }
-  @Bean
-  @Qualifier("JS")
-  public DefaultClassMapper classMapper() {
-    DefaultClassMapper classMapper = new DefaultClassMapper();
-    Map<String, Class<?>> idClassMapping = new HashMap<>();
-    idClassMapping.put("uk.gov.ons.census.fwmt.common.data.fulfillment.dto.PauseOutcome", PauseOutcome.class);
-    classMapper.setIdClassMapping(idClassMapping);
-    classMapper.setTrustedPackages("*");
-    return classMapper;
   }
   @Bean
   public RetryOperationsInterceptor interceptor() {
@@ -118,29 +94,25 @@ public class RabbitMqConfig {
 
     return retryTemplate;
   }
+
   @Bean
-  @Qualifier("OS")
   public MessageListenerAdapter listenerAdapter(FulfilmentEventReceiver receiver) {
     return new MessageListenerAdapter(receiver, "receiveMessage");
   }
 
+  //Message Listener
   @Bean
-  @Qualifier("OS")
-  public SimpleMessageListenerContainer container(
-      ConnectionFactory connectionFactory,
-      @Qualifier("OS") MessageListenerAdapter listenerAdapter,
-      @Qualifier("JS") MessageConverter jsonMessageConverter,
-      RetryOperationsInterceptor retryOperationsInterceptor) {
-
-    listenerAdapter.setMessageConverter(jsonMessageConverter);
-
+  public SimpleMessageListenerContainer gatewayActionsMessageListener(
+      @Qualifier("connectionFactory") ConnectionFactory connectionFactory,
+      @Qualifier("listenerAdapter") MessageListenerAdapter messageListenerAdapter,
+      @Qualifier("interceptor") RetryOperationsInterceptor retryOperationsInterceptor) {
     SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
     Advice[] adviceChain = {retryOperationsInterceptor};
+    messageListenerAdapter.setMessageConverter(new Jackson2JsonMessageConverter());
     container.setAdviceChain(adviceChain);
     container.setConnectionFactory(connectionFactory);
     container.setQueueNames(inputQueue);
-    container.setMessageListener(listenerAdapter);
-    container.setPrefetchCount(prefetchCount);
+    container.setMessageListener(messageListenerAdapter);
     return container;
   }
 }

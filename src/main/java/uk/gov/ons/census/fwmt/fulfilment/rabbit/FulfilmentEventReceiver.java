@@ -1,6 +1,10 @@
 package uk.gov.ons.census.fwmt.fulfilment.rabbit;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import uk.gov.ons.census.fwmt.common.data.fulfillment.dto.PauseOutcome;
@@ -23,22 +27,31 @@ public class FulfilmentEventReceiver {
   @Autowired
   private ChannelLookup channelLookup;
 
+  @Autowired
+  private ObjectMapper jsonMapper;
+
   public FulfilmentEventReceiver(FulfilmentService fulfilmentService, GatewayEventManager eventManager) {
     this.fulfilmentService = fulfilmentService;
     this.eventManager = eventManager;
   }
 
-  public void receiveMessage(PauseOutcome fulfillmentEvent) throws GatewayException {
+  @RabbitListener
+  public void receiveMessage(Object fulfillmentEvent) throws GatewayException, JsonProcessingException {
     String channelId;
-    channelId = channelLookup.getLookup(fulfillmentEvent.getEvent().getChannel());
 
+    ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+    String json = ow.writeValueAsString(fulfillmentEvent);
+
+    PauseOutcome pauseOutcome = jsonMapper.readValue(json, PauseOutcome.class);
+
+    channelId = channelLookup.getLookup(pauseOutcome.getEvent().getChannel());
     if (channelId != null) {
-      eventManager.triggerEvent(fulfillmentEvent.getPayload().getFulfilmentRequest().getCaseId(), RECEIVED_FULFILMENT, "Test");
-      fulfilmentService.processPauseCase(fulfillmentEvent);
+      eventManager.triggerEvent(pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(), RECEIVED_FULFILMENT, "Test");
+      fulfilmentService.processPauseCase(pauseOutcome);
     } else {
       eventManager.triggerErrorEvent(this.getClass(), "Could not find a matching channel for the fulfilment pause request",
-          String.valueOf(fulfillmentEvent.getPayload().getFulfilmentRequest().getCaseId()), "Channel: " +
-              fulfillmentEvent.getEvent().getChannel() + "Product code: " + fulfillmentEvent.getPayload().getFulfilmentRequest().getFulfilmentCode());
+          pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(), "Channel: " +
+              channelId + "Product code: " + pauseOutcome.getPayload().getFulfilmentRequest().getFulfilmentCode());
     }
   }
 }
