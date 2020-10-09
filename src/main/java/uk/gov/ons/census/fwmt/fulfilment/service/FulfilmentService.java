@@ -7,7 +7,6 @@ import uk.gov.ons.census.fwmt.common.data.fulfillment.dto.PauseOutcome;
 import uk.gov.ons.census.fwmt.common.error.GatewayException;
 import uk.gov.ons.census.fwmt.common.rm.dto.ActionInstructionType;
 import uk.gov.ons.census.fwmt.common.rm.dto.FwmtActionInstruction;
-import uk.gov.ons.census.fwmt.common.rm.dto.FwmtPauseActionInstruction;
 import uk.gov.ons.census.fwmt.events.component.GatewayEventManager;
 import uk.gov.ons.census.fwmt.fulfilment.data.GatewayCache;
 import uk.gov.ons.census.fwmt.fulfilment.lookup.PauseRulesLookup;
