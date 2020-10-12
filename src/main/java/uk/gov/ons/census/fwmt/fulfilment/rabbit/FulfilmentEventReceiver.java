@@ -38,20 +38,22 @@ public class FulfilmentEventReceiver {
   @RabbitListener
   public void receiveMessage(Object fulfillmentEvent) throws GatewayException, JsonProcessingException {
     String channelId;
+    String channelSent;
 
     ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
     String json = ow.writeValueAsString(fulfillmentEvent);
-
     PauseOutcome pauseOutcome = jsonMapper.readValue(json, PauseOutcome.class);
 
-    channelId = channelLookup.getLookup(pauseOutcome.getEvent().getChannel());
+    channelSent = pauseOutcome.getEvent().getChannel();
+
+    channelId = channelLookup.getLookup(channelSent);
     if (channelId != null) {
       eventManager.triggerEvent(pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(), RECEIVED_FULFILMENT, "Test");
       fulfilmentService.processPauseCase(pauseOutcome);
     } else {
       eventManager.triggerErrorEvent(this.getClass(), "Could not find a matching channel for the fulfilment pause request",
           pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(), "Channel: " +
-              channelId + "Product code: " + pauseOutcome.getPayload().getFulfilmentRequest().getFulfilmentCode());
+              channelSent + "Product code: " + pauseOutcome.getPayload().getFulfilmentRequest().getFulfilmentCode());
     }
   }
 }
