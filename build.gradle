@@ -47,7 +47,7 @@ description = 'census-fwmt-fulfillment-event-service'
 group = 'uk.gov.ons.census.fwmt'
 version = rootProject.file('version.txt').text.trim()
 
-mainClassName = 'uk.gov.ons.census.fwmt.fulfillment.Application'
+mainClassName = 'uk.gov.ons.census.fwmt.fulfilment.Application'
 
 sourceCompatibility = 11
 targetCompatibility = 11
