@@ -1,0 +1,40 @@
+*.class
+
+# Log file
+*.log
+*.qzgit s
+
+# Package Files #
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# ignore mac files
+.DS_Store
+
+# ignore idea storage
+.idea/
+*.iml
+*.iws
+out/
+.gradle
+build
+target/
+
+# Eclipse files
+.metadata
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+.loadpath
+.recommenders
+.project
+.classpath
+.vscode/

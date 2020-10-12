@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: census-fwmt-job-service
+    name: census-fwmt-fulfilment-service
   jackson:
     serialization:
       WRITE_DATES_AS_TIMESTAMPS: false
@@ -18,14 +18,7 @@ spring:
     continue-on-error: false
     username: postgres
     password: postgres
-    initialization-mode: always      
-  liquibase:
-    url: jdbc:postgresql://localhost:5432/postgres?currentSchema=fwmtg
-    default-schema: fwmtg
-    change-log: classpath:db/changelog/db.changelog-master.yml
-    user: postgres
-    password: postgres
-#     enabled: false
+    initialization-mode: always
 
 management:
   # Place /info and /health in the root
@@ -61,9 +54,9 @@ rabbitmq:
   concurrentConsumers: 5
   queues:
     rm:
-      input: "RM.Field"
-      dlq: "RM.FieldDLQ"
-      exchange: "adapter-outbound-exchange"
+      input: "event.fulfilment.request"
+      dlq: "event.DLQ"
+      exchange: "events"
 
 redis:
   host: "localhost"
@@ -106,3 +99,9 @@ spg:
 ce:
    followUpDate: "01/05/2020"
    startDate: "01/05/2020"
+
+fulfilment:
+  pauseRules:
+    path: classpath:/pauseRules.txt
+  channel:
+    path: classpath:/channelChecker.txt
