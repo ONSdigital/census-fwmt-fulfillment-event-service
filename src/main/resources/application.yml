@@ -53,6 +53,7 @@ rabbitmq:
   prefetchCount: 500
   concurrentConsumers: 5
   exchange:
+    queue: "Fulfilment.listener"
     routingKey: "event.fulfilment.request"
     exchange: "events"
 

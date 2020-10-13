@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -54,6 +55,7 @@ public class FulfilmentEventReceiver {
       eventManager.triggerErrorEvent(this.getClass(), "Could not find a matching channel for the fulfilment pause request",
           pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(), "Channel: " +
               channelSent + "Product code: " + pauseOutcome.getPayload().getFulfilmentRequest().getFulfilmentCode());
+      throw new AmqpRejectAndDontRequeueException(null, true, null);
     }
   }
 }
