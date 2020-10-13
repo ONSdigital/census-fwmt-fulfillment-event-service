@@ -52,11 +52,9 @@ rabbitmq:
   maxInterval: 45000
   prefetchCount: 500
   concurrentConsumers: 5
-  queues:
-    rm:
-      input: "event.fulfilment.request"
-      dlq: "event.DLQ"
-      exchange: "events"
+  exchange:
+    routingKey: "event.fulfilment.request"
+    exchange: "events"
 
 redis:
   host: "localhost"

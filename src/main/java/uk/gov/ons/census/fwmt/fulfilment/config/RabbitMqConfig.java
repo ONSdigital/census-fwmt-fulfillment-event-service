@@ -25,8 +25,8 @@ import java.io.IOException;
 
 @Configuration
 public class RabbitMqConfig {
-  public final String inputQueue;
-  public final String inputDlq;
+  public final String exchange;
+  public final String routingKey;
   private final String username;
   private final String password;
   private final String hostname;
@@ -46,8 +46,8 @@ public class RabbitMqConfig {
       @Value("${rabbitmq.multiplier}") double multiplier,
       @Value("${rabbitmq.maxInterval}") int maxInterval,
       @Value("${rabbitmq.prefetchCount}") int prefetchCount,
-      @Value("${rabbitmq.queues.rm.input}") String inputQueue,
-      @Value("${rabbitmq.queues.rm.dlq}") String inputDlq) {
+      @Value("${rabbitmq.exchange.routingKey}") String routingKey,
+      @Value("${rabbitmq.exchange.exchange}") String exchange) {
     this.username = username;
     this.password = password;
     this.hostname = hostname;
@@ -56,8 +56,8 @@ public class RabbitMqConfig {
     this.initialInterval = initialInterval;
     this.multiplier = multiplier;
     this.maxInterval = maxInterval;
-    this.inputQueue = inputQueue;
-    this.inputDlq = inputDlq;
+    this.exchange = exchange;
+    this.routingKey = routingKey;
     this.prefetchCount = prefetchCount;
   }
   @Bean
@@ -111,13 +111,13 @@ public class RabbitMqConfig {
       @Qualifier("interceptor") RetryOperationsInterceptor retryOperationsInterceptor) throws IOException {
     SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
     Channel channel = connectionFactory.createConnection().createChannel(false);
-    channel.queueDeclare("Fulfilment.listener", true, false, false, null);
-    channel.queueBind("Fulfilment.listener", "events", "event.fulfilment.request");
+    channel.queueDeclare(routingKey, true, false, false, null);
+    channel.queueBind(routingKey, exchange, "event.fulfilment.request");
     Advice[] adviceChain = {retryOperationsInterceptor};
     messageListenerAdapter.setMessageConverter(new Jackson2JsonMessageConverter());
     container.setAdviceChain(adviceChain);
     container.setConnectionFactory(connectionFactory);
-    container.setQueueNames("Fulfilment.listener");
+    container.setQueueNames(routingKey);
     container.setMessageListener(messageListenerAdapter);
     return container;
   }
