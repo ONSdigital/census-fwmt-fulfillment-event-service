@@ -1,11 +1,8 @@
 package uk.gov.ons.census.fwmt.fulfilment.config;
 
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
 import org.aopalliance.aop.Advice;
 import org.springframework.amqp.core.AmqpAdmin;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
