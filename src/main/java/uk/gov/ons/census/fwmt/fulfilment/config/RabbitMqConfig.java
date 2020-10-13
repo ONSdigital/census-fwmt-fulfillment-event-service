@@ -1,7 +1,11 @@
 package uk.gov.ons.census.fwmt.fulfilment.config;
 
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
 import org.aopalliance.aop.Advice;
 import org.springframework.amqp.core.AmqpAdmin;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
@@ -19,6 +23,8 @@ import uk.gov.ons.census.fwmt.common.retry.DefaultListenerSupport;
 import uk.gov.ons.census.fwmt.common.retry.GatewayMessageRecover;
 import uk.gov.ons.census.fwmt.common.retry.GatewayRetryPolicy;
 import uk.gov.ons.census.fwmt.fulfilment.rabbit.FulfilmentEventReceiver;
+
+import java.io.IOException;
 
 @Configuration
 public class RabbitMqConfig {
@@ -105,13 +111,16 @@ public class RabbitMqConfig {
   public SimpleMessageListenerContainer gatewayActionsMessageListener(
       @Qualifier("connectionFactory") ConnectionFactory connectionFactory,
       @Qualifier("listenerAdapter") MessageListenerAdapter messageListenerAdapter,
-      @Qualifier("interceptor") RetryOperationsInterceptor retryOperationsInterceptor) {
+      @Qualifier("interceptor") RetryOperationsInterceptor retryOperationsInterceptor) throws IOException {
     SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
+    Channel channel = connectionFactory.createConnection().createChannel(false);
+    channel.queueDeclare("Fulfilment.listener", true, false, false, null);
+    channel.queueBind("Fulfilment.listener", "events", "event.fulfilment.request");
     Advice[] adviceChain = {retryOperationsInterceptor};
     messageListenerAdapter.setMessageConverter(new Jackson2JsonMessageConverter());
     container.setAdviceChain(adviceChain);
     container.setConnectionFactory(connectionFactory);
-    container.setQueueNames(inputQueue);
+    container.setQueueNames("Fulfilment.listener");
     container.setMessageListener(messageListenerAdapter);
     return container;
   }
