@@ -1,6 +1,7 @@
 package uk.gov.ons.census.fwmt.fulfilment.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import uk.gov.ons.census.fwmt.common.data.fulfillment.dto.PauseOutcome;
@@ -44,8 +45,9 @@ public class FulfilmentService {
     if (caseCache == null && indCache == null){
       eventManager.triggerErrorEvent(this.getClass(), "Could not find an existing record",
           caseId, "ROUTING_FAILED");
-      throw new GatewayException(GatewayException.Fault.VALIDATION_FAILED, "Could not find an existing record",
-          String.valueOf(pauseRequest.getPayload().getFulfilmentRequest().getCaseId()));
+      throw new AmqpRejectAndDontRequeueException(null, true, null);
+      //      throw new GatewayException(GatewayException.Fault.VALIDATION_FAILED, "Could not find an existing record",
+//          String.valueOf(pauseRequest.getPayload().getFulfilmentRequest().getCaseId()));
     } else if (caseCache == null) {
       caseId = indCache.getIndividualCaseId();
     } else {
@@ -57,6 +59,7 @@ public class FulfilmentService {
     if (pauseRule == null) {
       eventManager.triggerErrorEvent(this.getClass(), "Could not find a rule for the fulfilment request and product code.",
           String.valueOf(caseId), "Product code: " + productCode);
+      throw new AmqpRejectAndDontRequeueException(null, true, null);
     } else {
       pauseActionInstruction.setActionInstruction(ActionInstructionType.PAUSE);
       pauseActionInstruction.setSurveyName("CENSUS");

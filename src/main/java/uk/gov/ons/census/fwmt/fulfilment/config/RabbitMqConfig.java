@@ -1,5 +1,7 @@
 package uk.gov.ons.census.fwmt.fulfilment.config;
 
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.impl.AMQImpl;
 import org.aopalliance.aop.Advice;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -20,10 +22,13 @@ import uk.gov.ons.census.fwmt.common.retry.GatewayMessageRecover;
 import uk.gov.ons.census.fwmt.common.retry.GatewayRetryPolicy;
 import uk.gov.ons.census.fwmt.fulfilment.rabbit.FulfilmentEventReceiver;
 
+import java.io.IOException;
+
 @Configuration
 public class RabbitMqConfig {
-  public final String inputQueue;
-  public final String inputDlq;
+  private final String exchange;
+  private final String routingKey;
+  private final String listenerQueue;
   private final String username;
   private final String password;
   private final String hostname;
@@ -43,8 +48,9 @@ public class RabbitMqConfig {
       @Value("${rabbitmq.multiplier}") double multiplier,
       @Value("${rabbitmq.maxInterval}") int maxInterval,
       @Value("${rabbitmq.prefetchCount}") int prefetchCount,
-      @Value("${rabbitmq.queues.rm.input}") String inputQueue,
-      @Value("${rabbitmq.queues.rm.dlq}") String inputDlq) {
+      @Value("${rabbitmq.exchange.routingKey}") String routingKey,
+      @Value("${rabbitmq.exchange.exchange}") String exchange,
+      @Value("${rabbitmq.exchange.queue}") String listenerQueue) {
     this.username = username;
     this.password = password;
     this.hostname = hostname;
@@ -53,8 +59,9 @@ public class RabbitMqConfig {
     this.initialInterval = initialInterval;
     this.multiplier = multiplier;
     this.maxInterval = maxInterval;
-    this.inputQueue = inputQueue;
-    this.inputDlq = inputDlq;
+    this.exchange = exchange;
+    this.routingKey = routingKey;
+    this.listenerQueue = listenerQueue;
     this.prefetchCount = prefetchCount;
   }
   @Bean
@@ -105,13 +112,16 @@ public class RabbitMqConfig {
   public SimpleMessageListenerContainer gatewayActionsMessageListener(
       @Qualifier("connectionFactory") ConnectionFactory connectionFactory,
       @Qualifier("listenerAdapter") MessageListenerAdapter messageListenerAdapter,
-      @Qualifier("interceptor") RetryOperationsInterceptor retryOperationsInterceptor) {
+      @Qualifier("interceptor") RetryOperationsInterceptor retryOperationsInterceptor) throws IOException {
     SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
+    Channel channel = connectionFactory.createConnection().createChannel(false);
+    channel.queueDeclare(listenerQueue, true, false, false, null);
+    channel.queueBind(listenerQueue, exchange, routingKey);
     Advice[] adviceChain = {retryOperationsInterceptor};
     messageListenerAdapter.setMessageConverter(new Jackson2JsonMessageConverter());
     container.setAdviceChain(adviceChain);
     container.setConnectionFactory(connectionFactory);
-    container.setQueueNames(inputQueue);
+    container.setQueueNames(listenerQueue);
     container.setMessageListener(messageListenerAdapter);
     return container;
   }
