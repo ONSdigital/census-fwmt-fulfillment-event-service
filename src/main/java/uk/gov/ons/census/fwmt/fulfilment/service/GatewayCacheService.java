@@ -2,7 +2,6 @@ package uk.gov.ons.census.fwmt.fulfilment.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import uk.gov.ons.census.fwmt.fulfilment.data.GatewayCache;
 import uk.gov.ons.census.fwmt.fulfilment.repository.GatewayCacheRepository;
 
 /**
@@ -20,30 +19,9 @@ public class GatewayCacheService {
     this.repository = repository;
   }
 
-  public GatewayCache getByIdAndTypeAndExists(String caseId, int type, boolean exists) {
+  public String getByIdAndTypeAndExists(String caseId, int type, boolean exists) {
     return repository.findByCaseIdAndTypeAndExistsInFwmt(caseId, type, exists); }
 
-  public GatewayCache getByIndividualCaseIdAndTypeAndExists(String indCaseId, int type, boolean exists) {
+  public String getByIndividualCaseIdAndTypeAndExists(String indCaseId, int type, boolean exists) {
     return repository.findByIndividualCaseIdAndTypeAndExistsInFwmt(indCaseId, type, exists); }
-
-  public boolean doesEstabUprnExist(String uprn) {
-    return repository.existsByEstabUprn(uprn);
-  };
-
-  public boolean doesEstabUprnAndTypeExist(String estabUprn, int type) {
-    return repository.existsByEstabUprnAndType(estabUprn, type);}
-
-  public String getEstabCaseId(String estabUprn) {
-    return repository.findByEstabUprn(estabUprn);
-  }
-
-  public String getUprnCaseId(String uprn) {
-    return repository.findByUprn(uprn);
-  }
-
-  public GatewayCache save(GatewayCache cache) {
-    return repository.save(cache);
-  }
-
-
 }
