@@ -11,19 +11,14 @@ import java.util.List;
 
 @Repository
 public interface GatewayCacheRepository extends JpaRepository<GatewayCache, Long> {
-  GatewayCache findByCaseIdAndTypeAndExistsInFwmt(String caseId, int type, boolean exists);
 
-  GatewayCache findByIndividualCaseIdAndTypeAndExistsInFwmt(String indCaseId, int type, boolean exists);
+  @Query("SELECT DISTINCT household.caseId FROM GatewayCache household WHERE household.caseId = :caseId AND "
+      + "household.type = :type AND household.existsInFwmt = :exists")
+  String findByCaseIdAndTypeAndExistsInFwmt(@Param("caseId") String caseId, @Param("type") int type, @Param("exists") boolean exists);
 
-  boolean existsByEstabUprn(String uprn);
-
-  boolean existsByEstabUprnAndType(String estabUprn, int type);
-
-  @Query("SELECT estab.caseId FROM GatewayCache estab WHERE estab.estabUprn = :estabUprn")
-  String findByEstabUprn(@Param("estabUprn") String estabUprn);
-
-  @Query("SELECT estab.caseId FROM GatewayCache estab WHERE estab.uprn = :uprn")
-  String findByUprn(@Param("uprn") String uprn);
+  @Query("SELECT DISTINCT household.individualCaseId FROM GatewayCache household WHERE household.individualCaseId = :caseId AND "
+      + "household.type = :type AND household.existsInFwmt = :exists")
+  String findByIndividualCaseIdAndTypeAndExistsInFwmt(@Param("caseId") String caseId, @Param("type") int type, @Param("exists") boolean exists);
 
   @NonNull
   List<GatewayCache> findAll();

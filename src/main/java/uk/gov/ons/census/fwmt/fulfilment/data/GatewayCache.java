@@ -49,9 +49,6 @@ public class GatewayCache {
 
   @Column(name = "individual_case_id", unique = true, nullable = false)
   public String individualCaseId;
-//
-//  @Column(name = "last_action_time")
-//  private Timestamp lastActionTime;
 
   // display only the details related to request routing
   public String toRoutingString() {
@@ -60,7 +57,4 @@ public class GatewayCache {
         "delivered=" + this.delivered + ")";
   }
 
-//  public void setLastActionTime(Timestamp lastActionTime) {
-//    this.lastActionTime = new Timestamp(lastActionTime.getTime());
-//  }
 }

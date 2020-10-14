@@ -9,7 +9,6 @@ import uk.gov.ons.census.fwmt.common.error.GatewayException;
 import uk.gov.ons.census.fwmt.common.rm.dto.ActionInstructionType;
 import uk.gov.ons.census.fwmt.common.rm.dto.FwmtActionInstruction;
 import uk.gov.ons.census.fwmt.events.component.GatewayEventManager;
-import uk.gov.ons.census.fwmt.fulfilment.data.GatewayCache;
 import uk.gov.ons.census.fwmt.fulfilment.lookup.PauseRulesLookup;
 import uk.gov.ons.census.fwmt.fulfilment.rabbit.MessagePublisher;
 
@@ -30,28 +29,26 @@ public class FulfilmentService {
   @Autowired
   private MessagePublisher messagePublisher;
 
-  public void processPauseCase(PauseOutcome pauseRequest) throws GatewayException {
+  public void processPauseCase(PauseOutcome pauseRequest) {
     FwmtActionInstruction pauseActionInstruction = new FwmtActionInstruction();
     String caseId = "";
     String pauseRule;
     String productCode = pauseRequest.getPayload().getFulfilmentRequest().getFulfilmentCode();
 
-    final GatewayCache caseCache = cacheService.getByIdAndTypeAndExists(pauseRequest.getPayload().getFulfilmentRequest()
+    final String caseCache = cacheService.getByIdAndTypeAndExists(pauseRequest.getPayload().getFulfilmentRequest()
         .getCaseId(), 10, true);
-    final GatewayCache indCache = cacheService.getByIndividualCaseIdAndTypeAndExists(pauseRequest.getPayload().getFulfilmentRequest()
+    final String indCache = cacheService.getByIndividualCaseIdAndTypeAndExists(pauseRequest.getPayload().getFulfilmentRequest()
         .getIndividualCaseId(), 10, true);
-    GatewayCache cache;
 
     if (caseCache == null && indCache == null){
+      caseId = pauseRequest.getPayload().getFulfilmentRequest().getCaseId();
       eventManager.triggerErrorEvent(this.getClass(), "Could not find an existing record",
           caseId, "ROUTING_FAILED");
       throw new AmqpRejectAndDontRequeueException(null, true, null);
-      //      throw new GatewayException(GatewayException.Fault.VALIDATION_FAILED, "Could not find an existing record",
-//          String.valueOf(pauseRequest.getPayload().getFulfilmentRequest().getCaseId()));
     } else if (caseCache == null) {
-      caseId = indCache.getIndividualCaseId();
+      caseId = indCache;
     } else {
-      caseId = caseCache.getCaseId();
+      caseId = caseCache;
     }
 
     pauseRule = pauseRulesLookup.getLookup(pauseRequest.getPayload().getFulfilmentRequest().getFulfilmentCode());
