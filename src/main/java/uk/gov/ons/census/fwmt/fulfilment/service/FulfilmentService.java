@@ -12,6 +12,13 @@ import uk.gov.ons.census.fwmt.events.component.GatewayEventManager;
 import uk.gov.ons.census.fwmt.fulfilment.lookup.PauseRulesLookup;
 import uk.gov.ons.census.fwmt.fulfilment.rabbit.MessagePublisher;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.Locale;
+
 @Slf4j
 @Service
 public class FulfilmentService {
@@ -58,6 +65,18 @@ public class FulfilmentService {
           String.valueOf(caseId), "Product code: " + productCode);
       throw new AmqpRejectAndDontRequeueException(null, true, null);
     } else {
+      SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.ENGLISH);
+      String date = LocalDateTime.now().toString();
+      Date currentDate;
+      try {
+        currentDate = dateFormat.parse(date);
+        pauseActionInstruction.setPauseFrom(currentDate);
+      } catch (ParseException e){
+        String error = e.toString();
+        System.out.println(error);
+      }
+
+
       pauseActionInstruction.setActionInstruction(ActionInstructionType.PAUSE);
       pauseActionInstruction.setSurveyName("CENSUS");
       pauseActionInstruction.setAddressType("HH");
