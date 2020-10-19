@@ -45,7 +45,7 @@ public class FulfilmentEventReceiver {
   }
 
   @RabbitHandler
-  public void receiveMessage(Object fulfillmentEvent, @Header("timestamp") String timestamp) throws GatewayException, JsonProcessingException {
+  public void receiveMessage(Object fulfillmentEvent, @Header("timestamp") String timestamp) {
     long epochTimeStamp = Long.parseLong(timestamp);
     Instant receivedMessageTime = Instant.ofEpochMilli(epochTimeStamp);
     String channelId;
