@@ -1,16 +1,17 @@
 package uk.gov.ons.census.fwmt.fulfilment.config;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.impl.AMQImpl;
 import org.aopalliance.aop.Advice;
 import org.springframework.amqp.core.AmqpAdmin;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.QueueBuilder;
+import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
-import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
-import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,9 +21,6 @@ import org.springframework.retry.support.RetryTemplate;
 import uk.gov.ons.census.fwmt.common.retry.DefaultListenerSupport;
 import uk.gov.ons.census.fwmt.common.retry.GatewayMessageRecover;
 import uk.gov.ons.census.fwmt.common.retry.GatewayRetryPolicy;
-import uk.gov.ons.census.fwmt.fulfilment.rabbit.FulfilmentEventReceiver;
-
-import java.io.IOException;
 
 @Configuration
 public class RabbitMqConfig {
@@ -94,7 +92,7 @@ public class RabbitMqConfig {
     backOffPolicy.setMaxInterval(maxInterval);
     retryTemplate.setBackOffPolicy(backOffPolicy);
 
-    GatewayRetryPolicy gatewayRetryPolicy = new GatewayRetryPolicy();
+    GatewayRetryPolicy gatewayRetryPolicy = new GatewayRetryPolicy(1);
     retryTemplate.setRetryPolicy(gatewayRetryPolicy);
 
     retryTemplate.registerListener(new DefaultListenerSupport());
@@ -103,26 +101,31 @@ public class RabbitMqConfig {
   }
 
   @Bean
-  public MessageListenerAdapter listenerAdapter(FulfilmentEventReceiver receiver) {
-    return new MessageListenerAdapter(receiver, "receiveMessage");
+  public Queue fulfilmentQueue() {
+    Queue queue = QueueBuilder.durable(listenerQueue).build();
+    queue.setAdminsThatShouldDeclare(amqpAdmin());
+    return queue;
   }
 
-  //Message Listener
   @Bean
-  public SimpleMessageListenerContainer gatewayActionsMessageListener(
-      @Qualifier("connectionFactory") ConnectionFactory connectionFactory,
-      @Qualifier("listenerAdapter") MessageListenerAdapter messageListenerAdapter,
-      @Qualifier("interceptor") RetryOperationsInterceptor retryOperationsInterceptor) throws IOException {
-    SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
-    Channel channel = connectionFactory.createConnection().createChannel(false);
-    channel.queueDeclare(listenerQueue, true, false, false, null);
-    channel.queueBind(listenerQueue, exchange, routingKey);
-    Advice[] adviceChain = {retryOperationsInterceptor};
-    messageListenerAdapter.setMessageConverter(new Jackson2JsonMessageConverter());
-    container.setAdviceChain(adviceChain);
-    container.setConnectionFactory(connectionFactory);
-    container.setQueueNames(listenerQueue);
-    container.setMessageListener(messageListenerAdapter);
-    return container;
+  public TopicExchange topicExchange() {
+    return new TopicExchange(exchange);
+  }
+
+  @Bean
+  public Binding binding(TopicExchange topicExchange, Queue fulfilmentQueue) {
+    return BindingBuilder.bind(fulfilmentQueue).to(topicExchange).with(routingKey);
+  }
+
+  @Bean
+  public SimpleRabbitListenerContainerFactory fulfilmentQueueListener(
+      ConnectionFactory connectionFactory, RetryOperationsInterceptor interceptor) {
+    SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+    factory.setConnectionFactory(connectionFactory);
+    factory.setMessageConverter(new Jackson2JsonMessageConverter());
+    Advice[] adviceChain = { interceptor };
+    factory.setAdviceChain(adviceChain);
+
+    return factory;
   }
 }
