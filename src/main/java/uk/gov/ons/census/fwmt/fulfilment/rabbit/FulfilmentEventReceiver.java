@@ -16,6 +16,8 @@ import uk.gov.ons.census.fwmt.events.component.GatewayEventManager;
 import uk.gov.ons.census.fwmt.fulfilment.lookup.ChannelLookup;
 import uk.gov.ons.census.fwmt.fulfilment.service.FulfilmentService;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
 @Slf4j
@@ -30,6 +32,7 @@ public class FulfilmentEventReceiver {
   @Autowired
   private GatewayEventManager eventManager;
 
+
   @Autowired
   private ChannelLookup channelLookup;
 
@@ -42,27 +45,36 @@ public class FulfilmentEventReceiver {
   }
 
   @RabbitHandler
-  public void receiveMessage(Object fulfillmentEvent, @Header("timestamp") String timestamp) throws GatewayException, JsonProcessingException {
+  public void receiveMessage(Object fulfillmentEvent, @Header("timestamp") String timestamp) {
     long epochTimeStamp = Long.parseLong(timestamp);
     Instant receivedMessageTime = Instant.ofEpochMilli(epochTimeStamp);
     String channelId;
     String channelSent;
     Message convertToMessage = (Message) fulfillmentEvent;
-    String pausePayload = new String(convertToMessage.getBody());
+    String pausePayload = new String(convertToMessage.getBody(), StandardCharsets.UTF_8);
 
-    PauseOutcome pauseOutcome = jsonMapper.readValue(pausePayload, PauseOutcome.class);
+    try {
+      PauseOutcome pauseOutcome = jsonMapper.readValue(pausePayload, PauseOutcome.class);
 
-    channelSent = pauseOutcome.getEvent().getChannel();
+      channelSent = pauseOutcome.getEvent().getChannel();
 
-    channelId = channelLookup.getLookup(channelSent);
-    if (channelId != null) {
-      eventManager.triggerEvent(pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(), RECEIVED_FULFILMENT, "Test");
-      fulfilmentService.processPauseCase(pauseOutcome, receivedMessageTime);
-    } else {
-      eventManager.triggerErrorEvent(this.getClass(), "Could not find a matching channel for the fulfilment pause request",
-          pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(), "Channel: " +
-              channelSent + "Product code: " + pauseOutcome.getPayload().getFulfilmentRequest().getFulfilmentCode());
-      throw new AmqpRejectAndDontRequeueException(null, true, null);
+      channelId = channelLookup.getLookup(channelSent);
+      if (channelId != null) {
+        eventManager
+            .triggerEvent(pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(), RECEIVED_FULFILMENT, "Test");
+        fulfilmentService.processPauseCase(pauseOutcome, receivedMessageTime);
+      } else {
+        eventManager
+            .triggerErrorEvent(this.getClass(), "Could not find a matching channel for the fulfilment pause request",
+                pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(), "Channel: " +
+                    channelSent + "Product code: " + pauseOutcome.getPayload().getFulfilmentRequest()
+                    .getFulfilmentCode());
+        throw new AmqpRejectAndDontRequeueException(null, true, null);
+      }
+    } catch (JsonProcessingException e) {
+      eventManager
+          .triggerErrorEvent(this.getClass(), "Unable to convert message to json",
+              pausePayload, e.getMessage());
     }
   }
 }
