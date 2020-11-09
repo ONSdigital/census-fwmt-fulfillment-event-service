@@ -4,6 +4,7 @@ import org.aopalliance.aop.Advice;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.core.TopicExchange;
@@ -11,10 +12,13 @@ import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFacto
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.amqp.support.converter.DefaultClassMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.retry.support.RetryTemplate;
@@ -118,11 +122,32 @@ public class RabbitMqConfig {
   }
 
   @Bean
+  public Jackson2JsonMessageConverter convertJsonMessage() {
+    return jsonMessageConverter(Object.class);
+  }
+
+  public Jackson2JsonMessageConverter jsonMessageConverter(Class<?> defaultType) {
+    Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter();
+    DefaultClassMapper mapper = new DefaultClassMapper();
+    mapper.setDefaultType(defaultType);
+    mapper.setTrustedPackages("*");
+    DefaultClassMapper mapperTest =
+        new DefaultClassMapper() {
+          @Override
+          public Class<?> toClass(MessageProperties properties) {
+            return defaultType;
+          }
+        };
+    converter.setClassMapper(mapperTest);
+    return converter;
+  }
+  @Bean
   public SimpleRabbitListenerContainerFactory fulfilmentQueueListener(
-      ConnectionFactory connectionFactory, RetryOperationsInterceptor interceptor) {
+      ConnectionFactory connectionFactory, RetryOperationsInterceptor interceptor,
+      @Qualifier("convertJsonMessage") MessageConverter messageConverter) {
     SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
     factory.setConnectionFactory(connectionFactory);
-    factory.setMessageConverter(new Jackson2JsonMessageConverter());
+    factory.setMessageConverter(messageConverter);
     Advice[] adviceChain = { interceptor };
     factory.setAdviceChain(adviceChain);
 
