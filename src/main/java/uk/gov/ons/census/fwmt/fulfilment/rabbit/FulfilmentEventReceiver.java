@@ -61,13 +61,16 @@ public class FulfilmentEventReceiver {
       channelId = channelLookup.getLookup(channelSent);
       if (channelId != null) {
         eventManager
-            .triggerEvent(pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(), RECEIVED_FULFILMENT, "Test");
+            .triggerEvent(pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(), RECEIVED_FULFILMENT,
+                    "CaseId", pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(),
+                    "Individual CaseId", pauseOutcome.getPayload().getFulfilmentRequest().getIndividualCaseId(),
+                    "Fulfilment Product Code", pauseOutcome.getPayload().getFulfilmentRequest().getFulfilmentCode());
         fulfilmentService.processPauseCase(pauseOutcome, receivedMessageTime);
       } else {
         eventManager
             .triggerErrorEvent(this.getClass(), "Could not find a matching channel for the fulfilment pause request",
                 pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(), "Channel: " +
-                    channelSent + "Product code: " + pauseOutcome.getPayload().getFulfilmentRequest()
+                    channelSent + "Fulfilment Product code: " + pauseOutcome.getPayload().getFulfilmentRequest()
                     .getFulfilmentCode());
         throw new AmqpRejectAndDontRequeueException(null, true, null);
       }

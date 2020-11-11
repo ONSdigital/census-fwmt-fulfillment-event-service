@@ -72,7 +72,8 @@ public class FulfilmentService {
         pauseActionInstruction.setPauseFrom(currentDate);
       } catch (ParseException e){
         String error = e.toString();
-        System.out.println(error);
+        eventManager.triggerErrorEvent(this.getClass(), "Can't parse message received time",
+                caseId, "messageReceivedTime: " + messageReceivedTime);
       }
 
 
