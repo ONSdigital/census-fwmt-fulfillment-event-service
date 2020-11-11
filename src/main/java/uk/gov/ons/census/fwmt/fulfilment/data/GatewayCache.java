@@ -13,8 +13,8 @@ import javax.persistence.Table;
 
 @Data
 @Builder(toBuilder = true)
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table(name = "gateway_cache")
 public class GatewayCache {
@@ -41,20 +41,33 @@ public class GatewayCache {
   @Column(name = "estab_uprn")
   public String estabUprn;
 
-  @Column(name = "type")
-  public int type;
+  @Column(name ="type")
+  public Integer type;
 
-  @Column(name = "last_action_instruction")
-  public String lastActionInstruction;
-
-  @Column(name = "individual_case_id", unique = true, nullable = false)
+  @Column(name = "individual_case_id")
   public String individualCaseId;
 
-  // display only the details related to request routing
-  public String toRoutingString() {
-    return "GatewayCache(" +
-        "existsInFwmt=" + this.existsInFwmt + ", " +
-        "delivered=" + this.delivered + ")";
-  }
+  @Column(name ="oa")
+  public String oa;
+
+  @Column(name = "manager_title")
+  public String managerTitle;
+
+  @Column(name = "manager_firstname")
+  public String managerFirstname;
+
+  @Column(name = "manager_surname")
+  public String managerSurname;
+
+  @Column(name = "manager_number")
+  public String managerContactNumber;
+
+  @Column(name = "usual_residents")
+  public Integer usualResidents;
+
+  @Column(name = "bedspaces")
+  public Integer bedspaces;
+
+  // TODO : Probably move this object to common so its in one location
 
 }
