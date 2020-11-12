@@ -76,7 +76,6 @@ public class FulfilmentService {
                 caseId, "messageReceivedTime: " + messageReceivedTime, "Error", error);
       }
 
-
       pauseActionInstruction.setActionInstruction(ActionInstructionType.PAUSE);
       pauseActionInstruction.setSurveyName("CENSUS");
       pauseActionInstruction.setAddressType("HH");
