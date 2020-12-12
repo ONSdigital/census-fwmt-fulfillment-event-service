@@ -20,7 +20,7 @@ public class PausePublishQueueConfig {
 
   @Bean(name = "republishRabbitTemplate")
   public RabbitTemplate rabbitTemplate(@Qualifier("RP_MC") MessageConverter mc,
-      ConnectionFactory connectionFactory) {
+      @Qualifier("gatewayConnectionFactory") ConnectionFactory connectionFactory) {
     RabbitTemplate template = new RabbitTemplate(connectionFactory);
     template.setMessageConverter(mc);
     return template;
