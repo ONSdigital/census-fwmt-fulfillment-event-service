@@ -89,7 +89,7 @@ dependencyManagement {
 dependencies {
     // Custom Libraries
     compile 'uk.gov.ons.census.fwmt:census-fwmt-canonical:1.0.17-RELEASE'
-    compile 'uk.gov.ons.census.fwmt:census-fwmt-events:1.0.43-RELEASE'
+    compile 'uk.gov.ons.census.fwmt:census-fwmt-events:0.0.47-SNAPSHOT'
     compile 'uk.gov.ons.census.fwmt:census-fwmt-common:1.2.14-RELEASE'
 
     // General Libraries
@@ -112,8 +112,7 @@ dependencies {
     compile 'org.springframework:spring-jdbc'
     compile 'org.springframework.retry:spring-retry'
     compile 'org.springframework:spring-aop'
-    compile 'org.springframework.data:spring-data-redis'
-    //compile 'org.springframework.data:spring-data-redis'
+
 
     // Data Formats
     compile 'org.apache.commons:commons-csv:1.6'
@@ -132,7 +131,6 @@ dependencies {
         exclude module: 'commons-logging'
     }
     compile 'org.jsoup:jsoup:1.11.3'
-    compile 'redis.clients:jedis:3.2.0'
     compile 'com.rabbitmq:amqp-client'
     compile 'com.microsoft.azure:adal4j:1.6.0'
     runtimeOnly 'org.postgresql:postgresql'
