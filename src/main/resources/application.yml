@@ -17,7 +17,7 @@ spring:
     schema: classpath:/schema.sql
     continue-on-error: false
     username: postgres
-    password: password
+    password: postgres
     initialization-mode: always
 
 management:
@@ -40,29 +40,6 @@ logging:
     org.springframework.web: INFO
     org.hibernate: INFO
     org.apache.commons.dbcp2: INFO
-
-rabbitmq:
-  username: "guest"
-  password: "guest"
-  hostname: "localhost"
-  port: 5672
-  virtualHost: "/"
-  initialInterval: 5000
-  multiplier: 3.0
-  maxInterval: 45000
-  prefetchCount: 500
-  concurrentConsumers: 5
-  exchange:
-    queue: "Fulfilment.listener"
-    routingKey: "event.fulfilment.request"
-    exchange: "events"
-
-redis:
-  host: "localhost"
-  port: 6379
-  password: "password"
-  database: 2
-
 totalmobile:
   username: "user"
   password: "password"
@@ -104,3 +81,38 @@ fulfilment:
     path: classpath:/pauseRules.txt
   channel:
     path: classpath:/channelChecker.txt
+
+
+app:
+  testing: false
+  rabbitmq:
+    gw:
+      username: "guest"
+      password: "guest"
+      host: "localhost"
+      port: 5673
+      virtualHost: "/"
+      initialInterval: 5000
+      multiplier: 3.0
+      maxInterval: 45000
+      prefetchCount: 500
+      concurrentConsumers: 5
+      exchange:
+        queue: "Fulfilment.listener"
+        routingKey: "event.fulfilment.request"
+      exchanges:
+        error: "REMOVE"
+      queues:
+        error: "REMOVE"
+    rm:
+      username: "guest"
+      password: "guest"
+      host: "localhost"
+      port: 5672
+      virtualHost: "/"
+      initialInterval: 5000
+      multiplier: 3.0
+      maxInterval: 45000
+      maxRetries: 1
+      prefetchCount: 500
+      concurrentConsumers: 10

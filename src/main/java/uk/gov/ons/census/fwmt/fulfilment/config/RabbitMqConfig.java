@@ -28,8 +28,6 @@ import uk.gov.ons.census.fwmt.common.retry.GatewayRetryPolicy;
 
 @Configuration
 public class RabbitMqConfig {
-  private final String exchange;
-  private final String routingKey;
   private final String listenerQueue;
   private final String username;
   private final String password;
@@ -39,20 +37,19 @@ public class RabbitMqConfig {
   private final int initialInterval;
   private final double multiplier;
   private final int maxInterval;
-  private final int prefetchCount;
+
   public RabbitMqConfig(
-      @Value("${rabbitmq.username}") String username,
-      @Value("${rabbitmq.password}") String password,
-      @Value("${rabbitmq.hostname}") String hostname,
-      @Value("${rabbitmq.port}") int port,
-      @Value("${rabbitmq.virtualHost}") String virtualHost,
-      @Value("${rabbitmq.initialInterval}") int initialInterval,
-      @Value("${rabbitmq.multiplier}") double multiplier,
-      @Value("${rabbitmq.maxInterval}") int maxInterval,
-      @Value("${rabbitmq.prefetchCount}") int prefetchCount,
-      @Value("${rabbitmq.exchange.routingKey}") String routingKey,
-      @Value("${rabbitmq.exchange.exchange}") String exchange,
-      @Value("${rabbitmq.exchange.queue}") String listenerQueue) {
+      @Value("${app.rabbitmq.rm.username}") String username,
+      @Value("${app.rabbitmq.rm.password}") String password,
+      @Value("${app.rabbitmq.rm.host}") String hostname,
+      @Value("${app.rabbitmq.rm.port}") int port,
+      @Value("${app.rabbitmq.rm.virtualHost}") String virtualHost,
+      @Value("${app.rabbitmq.rm.initialInterval}") int initialInterval,
+      @Value("${app.rabbitmq.rm.multiplier}") double multiplier,
+      @Value("${app.rabbitmq.rm.maxInterval}") int maxInterval,
+      @Value("${app.rabbitmq.rm.prefetchCount}") int prefetchCount,
+      @Value("${app.rabbitmq.gw.exchange.routingKey}") String routingKey,
+      @Value("${app.rabbitmq.gw.exchange.queue}") String listenerQueue) {
     this.username = username;
     this.password = password;
     this.hostname = hostname;
@@ -61,12 +58,10 @@ public class RabbitMqConfig {
     this.initialInterval = initialInterval;
     this.multiplier = multiplier;
     this.maxInterval = maxInterval;
-    this.exchange = exchange;
-    this.routingKey = routingKey;
     this.listenerQueue = listenerQueue;
-    this.prefetchCount = prefetchCount;
   }
-  @Bean
+
+  @Bean("rmConnectionFactory")
   public ConnectionFactory connectionFactory() {
     CachingConnectionFactory cachingConnectionFactory = new CachingConnectionFactory(hostname, port);
     cachingConnectionFactory.setVirtualHost(virtualHost);
@@ -74,10 +69,7 @@ public class RabbitMqConfig {
     cachingConnectionFactory.setUsername(username);
     return cachingConnectionFactory;
   }
-  @Bean
-  public AmqpAdmin amqpAdmin() {
-    return new RabbitAdmin(connectionFactory());
-  }
+
   @Bean
   public RetryOperationsInterceptor interceptor() {
     RetryOperationsInterceptor interceptor = new RetryOperationsInterceptor();
@@ -89,37 +81,17 @@ public class RabbitMqConfig {
   @Bean
   public RetryTemplate retryTemplate() {
     RetryTemplate retryTemplate = new RetryTemplate();
-
     ExponentialBackOffPolicy backOffPolicy = new ExponentialBackOffPolicy();
     backOffPolicy.setInitialInterval(initialInterval);
     backOffPolicy.setMultiplier(multiplier);
     backOffPolicy.setMaxInterval(maxInterval);
     retryTemplate.setBackOffPolicy(backOffPolicy);
-
     GatewayRetryPolicy gatewayRetryPolicy = new GatewayRetryPolicy(1);
     retryTemplate.setRetryPolicy(gatewayRetryPolicy);
-
     retryTemplate.registerListener(new DefaultListenerSupport());
-
     return retryTemplate;
   }
 
-  @Bean
-  public Queue fulfilmentQueue() {
-    Queue queue = QueueBuilder.durable(listenerQueue).build();
-    queue.setAdminsThatShouldDeclare(amqpAdmin());
-    return queue;
-  }
-
-  @Bean
-  public TopicExchange topicExchange() {
-    return new TopicExchange(exchange);
-  }
-
-  @Bean
-  public Binding binding(TopicExchange topicExchange, Queue fulfilmentQueue) {
-    return BindingBuilder.bind(fulfilmentQueue).to(topicExchange).with(routingKey);
-  }
 
   @Bean
   public Jackson2JsonMessageConverter convertJsonMessage() {
@@ -141,16 +113,23 @@ public class RabbitMqConfig {
     converter.setClassMapper(mapperTest);
     return converter;
   }
+
   @Bean
   public SimpleRabbitListenerContainerFactory fulfilmentQueueListener(
-      ConnectionFactory connectionFactory, RetryOperationsInterceptor interceptor,
+      @Qualifier("rmConnectionFactory") ConnectionFactory connectionFactory, RetryOperationsInterceptor interceptor,
       @Qualifier("convertJsonMessage") MessageConverter messageConverter) {
     SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
     factory.setConnectionFactory(connectionFactory);
     factory.setMessageConverter(messageConverter);
-    Advice[] adviceChain = { interceptor };
+    Advice[] adviceChain = {interceptor};
     factory.setAdviceChain(adviceChain);
-
     return factory;
+  }
+
+  @Bean
+  public Queue fulfilmentQueue(@Qualifier("gatewayAmqpAdmin") AmqpAdmin gwAmqpAdmin) {
+    Queue queue = QueueBuilder.durable(listenerQueue).build();
+    queue.setAdminsThatShouldDeclare(gwAmqpAdmin);
+    return queue;
   }
 }
