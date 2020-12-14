@@ -116,7 +116,7 @@ public class RabbitMqConfig {
 
   @Bean
   public SimpleRabbitListenerContainerFactory fulfilmentQueueListener(
-      @Qualifier("gatewayConnectionFactory") ConnectionFactory connectionFactory, RetryOperationsInterceptor interceptor,
+      @Qualifier("rmConnectionFactory") ConnectionFactory connectionFactory, RetryOperationsInterceptor interceptor,
       @Qualifier("convertJsonMessage") MessageConverter messageConverter) {
     SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
     factory.setConnectionFactory(connectionFactory);
