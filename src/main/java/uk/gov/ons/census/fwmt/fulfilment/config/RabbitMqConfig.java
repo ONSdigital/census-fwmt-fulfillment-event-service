@@ -125,11 +125,4 @@ public class RabbitMqConfig {
     factory.setAdviceChain(adviceChain);
     return factory;
   }
-
-  @Bean
-  public Queue fulfilmentQueue(@Qualifier("gatewayAmqpAdmin") AmqpAdmin gwAmqpAdmin) {
-    Queue queue = QueueBuilder.durable(listenerQueue).build();
-    queue.setAdminsThatShouldDeclare(gwAmqpAdmin);
-    return queue;
-  }
 }
