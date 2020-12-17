@@ -64,18 +64,11 @@ public class FulfilmentService {
           caseId, "Product code: " + productCode);
       throw new AmqpRejectAndDontRequeueException(null, true, null);
     } else {
-      SimpleDateFormat dateFormat = new SimpleDateFormat("EEE MMM d HH:mm:ss z yyyy", Locale.ENGLISH);
-      String date = Date.from(messageReceivedTime).toString();
-      Date currentDate;
-      try {
-        currentDate = dateFormat.parse(date);
-        pauseActionInstruction.setPauseFrom(currentDate);
-      } catch (ParseException e){
-        String error = e.toString();
-        eventManager.triggerErrorEvent(this.getClass(), "Can't parse message received time, "+ error,
-                caseId, "messageReceivedTime: " + messageReceivedTime);
-      }
-
+      SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+      Date date = Date.from(messageReceivedTime);
+      String currentDate;
+      currentDate = dateFormat.format(date);
+      pauseActionInstruction.setPauseFrom(currentDate);
 
       pauseActionInstruction.setActionInstruction(ActionInstructionType.PAUSE);
       pauseActionInstruction.setSurveyName("CENSUS");
