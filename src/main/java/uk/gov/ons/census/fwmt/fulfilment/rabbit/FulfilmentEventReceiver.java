@@ -22,7 +22,7 @@ import java.time.Instant;
 
 @Slf4j
 @Component
-@RabbitListener(queues = "${rabbitmq.exchange.queue}", containerFactory = "fulfilmentQueueListener")
+@RabbitListener(queues = "${app.rabbitmq.gw.exchange.queue}", containerFactory = "fulfilmentQueueListener")
 public class FulfilmentEventReceiver {
 
   private static final String RECEIVED_FULFILMENT = "RECEIVED_FULFILMENT";
