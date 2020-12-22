@@ -3,7 +3,6 @@ package uk.gov.ons.census.fwmt.fulfilment.rabbit;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -16,7 +15,6 @@ import uk.gov.ons.census.fwmt.events.component.GatewayEventManager;
 import uk.gov.ons.census.fwmt.fulfilment.lookup.ChannelLookup;
 import uk.gov.ons.census.fwmt.fulfilment.service.FulfilmentService;
 
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
@@ -45,7 +43,7 @@ public class FulfilmentEventReceiver {
   }
 
   @RabbitHandler
-  public void receiveMessage(Object fulfillmentEvent, @Header("timestamp") String timestamp) {
+  public void receiveMessage(Object fulfillmentEvent, @Header("timestamp") String timestamp) throws GatewayException {
     long epochTimeStamp = Long.parseLong(timestamp);
     Instant receivedMessageTime = Instant.ofEpochMilli(epochTimeStamp);
     String channelId;
@@ -72,12 +70,12 @@ public class FulfilmentEventReceiver {
                 pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(), "Channel: " +
                     channelSent + "Fulfilment Product code: " + pauseOutcome.getPayload().getFulfilmentRequest()
                     .getFulfilmentCode());
-        throw new AmqpRejectAndDontRequeueException(null, true, null);
       }
     } catch (JsonProcessingException e) {
       eventManager
           .triggerErrorEvent(this.getClass(), "Unable to convert message to json",
               pausePayload, e.getMessage());
+      throw new GatewayException(GatewayException.Fault.SYSTEM_ERROR, "Unable to convert message to json");
     }
   }
 }
