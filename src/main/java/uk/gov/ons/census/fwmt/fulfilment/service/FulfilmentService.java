@@ -5,16 +5,15 @@ import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import uk.gov.ons.census.fwmt.common.data.fulfillment.dto.PauseOutcome;
+import uk.gov.ons.census.fwmt.common.error.GatewayException;
 import uk.gov.ons.census.fwmt.common.rm.dto.ActionInstructionType;
 import uk.gov.ons.census.fwmt.common.rm.dto.FwmtActionInstruction;
 import uk.gov.ons.census.fwmt.events.component.GatewayEventManager;
 import uk.gov.ons.census.fwmt.fulfilment.lookup.PauseRulesLookup;
 import uk.gov.ons.census.fwmt.fulfilment.rabbit.MessagePublisher;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Locale;
 
@@ -48,9 +47,8 @@ public class FulfilmentService {
 
     if (caseCache == null && indCache == null){
       caseId = pauseRequest.getPayload().getFulfilmentRequest().getCaseId();
-      eventManager.triggerErrorEvent(this.getClass(), "Could not find an existing record",
-          caseId, "ROUTING_FAILED");
-      throw new AmqpRejectAndDontRequeueException(null, true, null);
+      eventManager.triggerErrorEvent(this.getClass(), "Could not find an existing record or case is not a household",
+          caseId, "NO_RECORD_FOUND");
     } else if (caseCache == null) {
       caseId = indCache;
     } else {
@@ -62,8 +60,7 @@ public class FulfilmentService {
     if (pauseRule == null) {
       eventManager.triggerErrorEvent(this.getClass(), "Could not find a rule for the fulfilment request and product code.",
           caseId, "Product code: " + productCode);
-      throw new AmqpRejectAndDontRequeueException(null, true, null);
-    } else {
+    } else if (caseId != null) {
       SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
       Date date = Date.from(messageReceivedTime);
       String currentDate;
