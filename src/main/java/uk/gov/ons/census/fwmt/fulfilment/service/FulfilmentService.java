@@ -36,8 +36,7 @@ public class FulfilmentService {
 
   public void processPauseCase(PauseOutcome pauseRequest, Instant messageReceivedTime) {
     FwmtActionInstruction pauseActionInstruction = new FwmtActionInstruction();
-    String caseId = "";
-    String pauseRule;
+    String caseId;
     String productCode = pauseRequest.getPayload().getFulfilmentRequest().getFulfilmentCode();
 
     final String caseCache = cacheService.getByIdAndTypeAndExists(pauseRequest.getPayload().getFulfilmentRequest()
@@ -51,12 +50,18 @@ public class FulfilmentService {
           caseId, "NO_RECORD_FOUND");
     } else if (caseCache == null) {
       caseId = indCache;
+      sendPause(pauseRequest, messageReceivedTime, pauseActionInstruction, caseId, productCode);
     } else {
       caseId = caseCache;
+      sendPause(pauseRequest, messageReceivedTime, pauseActionInstruction, caseId, productCode);
     }
 
-    pauseRule = pauseRulesLookup.getLookup(pauseRequest.getPayload().getFulfilmentRequest().getFulfilmentCode());
+  }
 
+  private void sendPause(PauseOutcome pauseRequest, Instant messageReceivedTime,
+      FwmtActionInstruction pauseActionInstruction, String caseId, String productCode) {
+    String pauseRule;
+    pauseRule = pauseRulesLookup.getLookup(pauseRequest.getPayload().getFulfilmentRequest().getFulfilmentCode());
     if (pauseRule == null) {
       eventManager.triggerErrorEvent(this.getClass(), "Could not find a rule for the fulfilment request and product code.",
           caseId, "Product code: " + productCode);
