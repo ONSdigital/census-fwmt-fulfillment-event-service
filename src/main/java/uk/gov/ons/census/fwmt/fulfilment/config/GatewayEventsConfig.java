@@ -21,12 +21,6 @@ import java.util.function.Function;
 @Configuration
 public class GatewayEventsConfig {
 
-  public static final String RECEIVED_FULFILMENT = "RECEIVED_FULFILMENT";
-
-  public static final String ROUTING_FAILED = "ROUTING_FAILED";
-
-  public static final String CONVERT_SPG_UNIT_UPDATE_TO_CREATE = "CONVERT_SPG_UNIT_UPDATE_TO_CREATE";
-
   private final boolean useJsonLogging;
 
   public GatewayEventsConfig(@Value("#{'${logging.profile}' == 'CLOUD'}") boolean useJsonLogging) {

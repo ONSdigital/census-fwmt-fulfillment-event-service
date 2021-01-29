@@ -36,9 +36,7 @@ public class FulfilmentSetup {
 
     try (BufferedReader in = new BufferedReader(new InputStreamReader(resource.getInputStream(), UTF_8))) {
       while ((channelLine = in.readLine()) != null) {
-        String channelSelector = channelLine;
-        String channelSelectorRule = channelLine;
-        channelLookup.add(channelSelector, channelSelectorRule);
+        channelLookup.add(channelLine, channelLine);
       }
     }catch (IOException e) {
       throw new GatewayException(GatewayException.Fault.SYSTEM_ERROR, e, "Cannot process transition rule lookup");
@@ -65,6 +63,4 @@ public class FulfilmentSetup {
     }
     return pauseRulesLookup;
   }
-
-
 }

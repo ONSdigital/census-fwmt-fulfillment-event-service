@@ -24,12 +24,13 @@ import java.time.Instant;
 public class FulfilmentEventReceiver {
 
   private static final String RECEIVED_FULFILMENT = "RECEIVED_FULFILMENT";
-  @Autowired
-  private FulfilmentService fulfilmentService;
+  private static final String FAILED_CHANNEL_MATCH = "FAILED_CHANNEL_MATCH";
 
   @Autowired
-  private GatewayEventManager eventManager;
+  private final FulfilmentService fulfilmentService;
 
+  @Autowired
+  private final GatewayEventManager eventManager;
 
   @Autowired
   private ChannelLookup channelLookup;
@@ -57,24 +58,23 @@ public class FulfilmentEventReceiver {
       channelSent = pauseOutcome.getEvent().getChannel();
 
       channelId = channelLookup.getLookup(channelSent);
+      String fulfilmentProductCode = "Fulfilment Product Code";
+      String caseId = "Case ID";
       if (channelId != null) {
-        eventManager
-            .triggerEvent(pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(), RECEIVED_FULFILMENT,
-                    "CaseId", pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(),
-                    "Individual CaseId", pauseOutcome.getPayload().getFulfilmentRequest().getIndividualCaseId(),
-                    "Fulfilment Product Code", pauseOutcome.getPayload().getFulfilmentRequest().getFulfilmentCode());
+        eventManager.triggerEvent(pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(), RECEIVED_FULFILMENT,
+            caseId, pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(),
+            "Individual CaseId", pauseOutcome.getPayload().getFulfilmentRequest().getIndividualCaseId(),
+            fulfilmentProductCode, pauseOutcome.getPayload().getFulfilmentRequest().getFulfilmentCode());
         fulfilmentService.processPauseCase(pauseOutcome, receivedMessageTime);
       } else {
-        eventManager
-            .triggerErrorEvent(this.getClass(), "Could not find a matching channel for the fulfilment pause request",
-                pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(), "Channel: " +
-                    channelSent + "Fulfilment Product code: " + pauseOutcome.getPayload().getFulfilmentRequest()
-                    .getFulfilmentCode());
+        eventManager.triggerErrorEvent(this.getClass(), "Could not find a matching channel for the fulfilment pause request",
+            pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(), FAILED_CHANNEL_MATCH,
+            caseId, pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(),
+            "Channel", channelSent,
+            fulfilmentProductCode, pauseOutcome.getPayload().getFulfilmentRequest().getFulfilmentCode());
       }
     } catch (JsonProcessingException e) {
-      eventManager
-          .triggerErrorEvent(this.getClass(), "Unable to convert message to json",
-              pausePayload, e.getMessage());
+      eventManager.triggerErrorEvent(this.getClass(), "Unable to convert message to json", pausePayload, e.getMessage());
       throw new GatewayException(GatewayException.Fault.SYSTEM_ERROR, "Unable to convert message to json");
     }
   }
