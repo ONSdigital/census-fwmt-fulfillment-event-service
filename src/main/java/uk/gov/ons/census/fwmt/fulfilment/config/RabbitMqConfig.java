@@ -1,17 +1,10 @@
 package uk.gov.ons.census.fwmt.fulfilment.config;
 
 import org.aopalliance.aop.Advice;
-import org.springframework.amqp.core.AmqpAdmin;
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.MessageProperties;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.QueueBuilder;
-import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.support.converter.DefaultClassMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
@@ -28,7 +21,6 @@ import uk.gov.ons.census.fwmt.common.retry.GatewayRetryPolicy;
 
 @Configuration
 public class RabbitMqConfig {
-  private final String listenerQueue;
   private final String username;
   private final String password;
   private final String hostname;
@@ -46,10 +38,7 @@ public class RabbitMqConfig {
       @Value("${app.rabbitmq.rm.virtualHost}") String virtualHost,
       @Value("${app.rabbitmq.rm.initialInterval}") int initialInterval,
       @Value("${app.rabbitmq.rm.multiplier}") double multiplier,
-      @Value("${app.rabbitmq.rm.maxInterval}") int maxInterval,
-      @Value("${app.rabbitmq.rm.prefetchCount}") int prefetchCount,
-      @Value("${app.rabbitmq.gw.exchange.routingKey}") String routingKey,
-      @Value("${app.rabbitmq.gw.exchange.queue}") String listenerQueue) {
+      @Value("${app.rabbitmq.rm.maxInterval}") int maxInterval) {
     this.username = username;
     this.password = password;
     this.hostname = hostname;
@@ -58,7 +47,6 @@ public class RabbitMqConfig {
     this.initialInterval = initialInterval;
     this.multiplier = multiplier;
     this.maxInterval = maxInterval;
-    this.listenerQueue = listenerQueue;
   }
 
   @Bean("rmConnectionFactory")
@@ -91,7 +79,6 @@ public class RabbitMqConfig {
     retryTemplate.registerListener(new DefaultListenerSupport());
     return retryTemplate;
   }
-
 
   @Bean
   public Jackson2JsonMessageConverter convertJsonMessage() {
