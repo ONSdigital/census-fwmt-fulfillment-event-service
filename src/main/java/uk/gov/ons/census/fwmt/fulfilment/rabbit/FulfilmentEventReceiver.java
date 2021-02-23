@@ -69,7 +69,6 @@ public class FulfilmentEventReceiver {
       } else {
         eventManager.triggerEvent(pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(), FAILED_CHANNEL_MATCH,
             "Pause outcome", pauseOutcome.toString(),
-            caseId, pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(),
             "Channel", channelSent,
             fulfilmentProductCode, pauseOutcome.getPayload().getFulfilmentRequest().getFulfilmentCode());
       }

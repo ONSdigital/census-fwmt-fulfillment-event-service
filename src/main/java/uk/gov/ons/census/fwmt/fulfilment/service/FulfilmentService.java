@@ -62,7 +62,7 @@ public class FulfilmentService {
     String pauseRule;
     pauseRule = pauseRulesLookup.getLookup(pauseRequest.getPayload().getFulfilmentRequest().getFulfilmentCode());
     if (pauseRule == null) {
-      eventManager.triggerErrorEvent(this.getClass(), "Could not find a rule for the fulfilment request and product code.", caseId,
+      eventManager.triggerEvent(caseId, "Could not find a rule for the fulfilment request and product code.",
           UNRECOGNISED_FULFILLMENT_CODE, "Product code", productCode);
     } else if (caseId != null) {
       FwmtActionInstruction pauseActionInstruction = buildPause(messageReceivedTime, caseId, pauseRule);
