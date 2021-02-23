@@ -67,8 +67,8 @@ public class FulfilmentEventReceiver {
             fulfilmentProductCode, pauseOutcome.getPayload().getFulfilmentRequest().getFulfilmentCode());
         fulfilmentService.processPauseCase(pauseOutcome, receivedMessageTime);
       } else {
-        eventManager.triggerErrorEvent(this.getClass(), "Could not find a matching channel for the fulfilment pause request",
-            pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(), FAILED_CHANNEL_MATCH,
+        eventManager.triggerEvent(pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(), FAILED_CHANNEL_MATCH,
+            "Pause outcome", pauseOutcome.toString(),
             caseId, pauseOutcome.getPayload().getFulfilmentRequest().getCaseId(),
             "Channel", channelSent,
             fulfilmentProductCode, pauseOutcome.getPayload().getFulfilmentRequest().getFulfilmentCode());
