@@ -48,7 +48,7 @@ public class FulfilmentService {
 
     if (caseCache == null && indCache == null) {
       caseId = pauseRequest.getPayload().getFulfilmentRequest().getCaseId();
-      eventManager.triggerErrorEvent(this.getClass(), "Could not find an existing record or case is not a household", caseId, NO_RECORD_FOUND);
+      eventManager.triggerEvent(caseId, "Could not find an existing record or case is not a household", NO_RECORD_FOUND);
     } else if (caseCache == null) {
       caseId = indCache;
       sendPause(pauseRequest, messageReceivedTime, caseId, productCode);
