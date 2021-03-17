@@ -2,6 +2,7 @@ package uk.gov.ons.census.fwmt.fulfilment.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import uk.gov.ons.census.fwmt.fulfilment.data.GatewayCache;
 import uk.gov.ons.census.fwmt.fulfilment.repository.GatewayCacheRepository;
 
 /**
@@ -19,9 +20,9 @@ public class GatewayCacheService {
     this.repository = repository;
   }
 
-  public String getByIdAndTypeAndExists(String caseId, int type, boolean exists) {
+  public GatewayCache getByIdAndTypeAndExists(String caseId, int type, boolean exists) {
     return repository.findByCaseIdAndTypeAndExistsInFwmt(caseId, type, exists); }
 
-  public String getByIndividualCaseIdAndTypeAndExists(String indCaseId, int type, boolean exists) {
+  public GatewayCache getByIndividualCaseIdAndTypeAndExists(String indCaseId, int type, boolean exists) {
     return repository.findByIndividualCaseIdAndTypeAndExistsInFwmt(indCaseId, type, exists); }
 }
