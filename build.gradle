@@ -87,7 +87,6 @@ dependencyManagement {
 }
 
 dependencies {
-    implementation 'com.github.spotbugs:spotbugs-annotations:4.0.1'
     // Custom Libraries
     compile 'uk.gov.ons.census.fwmt:census-fwmt-canonical:1.0.17-RELEASE'
     compile 'uk.gov.ons.census.fwmt:census-fwmt-events:1.0.50-RELEASE'
