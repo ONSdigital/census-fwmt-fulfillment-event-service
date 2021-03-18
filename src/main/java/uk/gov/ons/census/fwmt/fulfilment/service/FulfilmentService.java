@@ -1,6 +1,7 @@
 package uk.gov.ons.census.fwmt.fulfilment.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import uk.gov.ons.census.fwmt.common.data.fulfillment.dto.PauseOutcome;
@@ -51,7 +52,7 @@ public class FulfilmentService {
     final GatewayCache caseCache = cacheService.getByIdAndTypeAndExists(pauseRequest.getPayload().getFulfilmentRequest().getCaseId(),
         10, true);
 
-    if (individualCaseId != null && !individualCaseId.equals("")) {
+    if (!Strings.isEmpty(individualCaseId)) {
         indCache = cacheService.getByIndividualCaseIdAndTypeAndExists(individualCaseId, 10, true);
     }
 
