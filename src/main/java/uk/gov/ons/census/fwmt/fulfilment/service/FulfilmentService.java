@@ -43,13 +43,17 @@ public class FulfilmentService {
   private MessagePublisher messagePublisher;
 
   public void processPauseCase(PauseOutcome pauseRequest, Instant messageReceivedTime) {
+    GatewayCache indCache = null;
     String caseId;
+    String individualCaseId = pauseRequest.getPayload().getFulfilmentRequest().getIndividualCaseId();
     String productCode = pauseRequest.getPayload().getFulfilmentRequest().getFulfilmentCode();
 
     final GatewayCache caseCache = cacheService.getByIdAndTypeAndExists(pauseRequest.getPayload().getFulfilmentRequest().getCaseId(),
         10, true);
-    final GatewayCache indCache = cacheService.getByIndividualCaseIdAndTypeAndExists(pauseRequest.getPayload().getFulfilmentRequest().getIndividualCaseId(),
-        10, true);
+
+    if (individualCaseId != null && !individualCaseId.equals("")) {
+        indCache = cacheService.getByIndividualCaseIdAndTypeAndExists(individualCaseId, 10, true);
+    }
 
     if (caseCache == null && indCache == null) {
       caseId = pauseRequest.getPayload().getFulfilmentRequest().getCaseId();
